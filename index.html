@@ -259,9 +259,20 @@ details.setup summary{font-weight:700;cursor:pointer;font-family:var(--f-display
 .vword:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .vmean{font-weight:500}
 
+/* sign-in */
+.authbtns{display:grid;gap:8px}
+.btn.sso{justify-content:center;padding:10px 14px;gap:10px}
+.btn.sso svg{width:20px;height:20px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:600;cursor:pointer;font-size:.88rem}
+.authcta{background:var(--accent-soft);border-radius:12px;padding:14px;display:grid;gap:8px}
+.authin{display:grid;gap:8px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+.autherr{color:var(--bad);margin:0;font-size:.88rem}
+
 /* account */
-input[type=email]{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;width:100%;min-width:0}
-input[type=email]:focus{border-color:var(--sky);outline:none}
+input[type=email],input[type=password]{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;width:100%;min-width:0}
+input[type=email]:focus,input[type=password]:focus{border-color:var(--sky);outline:none}
 .setgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .sgroup{display:grid;gap:12px;min-width:0}
 .sgroup label{display:grid;gap:4px;font-weight:600;font-size:.9rem}
@@ -589,17 +600,16 @@ input[type=email]:focus{border-color:var(--sky);outline:none}
   <div class="setgrid">
     <div class="card sgroup">
       <h3>Profile</h3>
+      <div id="authBox"></div>
       <div class="row" style="flex-wrap:nowrap"><span class="avatar" id="pAvatar">🎧</span><div style="min-width:0"><b id="pName">Learner</b><div class="muted small" id="pEmail"></div></div></div>
       <div><span class="small" style="font-weight:600">Avatar</span><div class="emojis" id="avatars"></div></div>
       <label>Display name<input type="text" id="sName" placeholder="Your name" autocomplete="name"></label>
-      <label>Email<input type="email" id="sEmail" placeholder="you@example.com" autocomplete="email"></label>
       <label>My English level
         <select id="sLevel"><option value="A1">A1 · Beginner</option><option value="A2">A2 · Elementary</option><option value="B1">B1 · Intermediate</option><option value="B2">B2 · Upper intermediate</option><option value="C1">C1 · Advanced</option></select>
       </label>
       <label>App language<select id="sUi"></select></label>
       <p class="muted small" style="margin:0">Menus and buttons switch to this language when you save. Subtitles in the same language turn on too.</p>
       <div class="row"><button class="btn pri" id="saveProfile">Save settings</button></div>
-      <p class="muted small" style="margin:0">Sign-in with email or Google arrives when the site connects to a server. Until then, your progress stays on this device.</p>
     </div>
 
     <div class="card sgroup">
@@ -652,6 +662,25 @@ input[type=email]:focus{border-color:var(--sky);outline:none}
     <p class="muted small" style="margin:0">Demo checkout: no payment is taken in this version. Connect Paddle or Lemon Squeezy before launch.</p>
   </div>
 </div>
+<div class="modal" id="authModal" hidden role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="box">
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2 id="authTitle">Sign in to Mochi English</h2><button class="btn icon ghost" id="authClose" aria-label="Close">✕</button></div>
+    <p class="muted" style="margin:0" id="authReason">Save your progress and use it on every device.</p>
+    <div class="authbtns">
+      <button class="btn sso" data-prov="google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+      <button class="btn sso" data-prov="facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.4 19.5v-6h2l.3-2.4h-2.3V9.6c0-.7.2-1.2 1.2-1.2h1.2V6.3c-.2 0-1-.1-1.8-.1-1.8 0-3 1.1-3 3.1v1.8H9v2.4h2v6z"/></svg>Continue with Facebook</button>
+    </div>
+    <div class="or" id="authOr">or</div>
+    <form class="sgroup" id="emailForm" novalidate>
+      <label>Email<input type="email" id="aEmail" autocomplete="email"></label>
+      <label>Password<input type="password" id="aPass" autocomplete="current-password"></label>
+      <p class="autherr" id="authErr" hidden></p>
+      <button class="btn pri" type="submit" id="aSubmit" style="justify-content:center">Sign in</button>
+      <div class="row" style="justify-content:space-between"><button type="button" class="linkbtn" id="aToggle">New here? Create an account</button><button type="button" class="linkbtn" id="aForgot">Forgot password?</button></div>
+    </form>
+    <p class="muted small" id="authDemo" hidden style="margin:0">Demo mode: sign-in is simulated until the site owner connects Firebase.</p>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -665,6 +694,9 @@ const CONFIG = {
   freeLookupsPerDay: 10,     // word lookups per day on the Free plan
   freeNotebookMax: 20,       // notebook size on the Free plan
   freeGrammarTopics: 6,      // grammar topics open on the Free plan
+  requireSignIn: 'always',   // 'always' = sign in before using the site · 'vip' = only before starting VIP · 'never'
+  signInWith: ['google','facebook','email'],   // remove any option you don't want to offer
+  firebase: { apiKey: '', authDomain: '', projectId: '', appId: '' },  // paste from Firebase → Project settings → Your apps
   captionApi: '',            // optional: your server URL that returns English subtitles (SRT/VTT) for ?v=YOUTUBE_ID
 };
 /* Translation languages offered to learners (code: label). Codes follow ISO 639-1. */
@@ -1132,6 +1164,40 @@ Paste the transcript below to get subtitles.|Dán bản ghi (transcript) bên d�
 The video can't play here|Không phát được video ở đây|ここでは動画を再生できません|여기서는 영상을 재생할 수 없어요|此处无法播放视频|El vídeo no se puede reproducir aquí
 This page is blocking YouTube, or the channel has turned off embedding. Subtitles and practice still work. Open the video on YouTube to watch it.|Trang này đang chặn YouTube, hoặc chủ kênh đã tắt chế độ nhúng. Phụ đề và bài luyện vẫn dùng được. Mở video trên YouTube để xem.|このページがYouTubeをブロックしているか、チャンネルが埋め込みを無効にしています。字幕と練習は使えます。動画はYouTubeで開いてください。|이 페이지가 YouTube를 막고 있거나 채널에서 퍼가기를 껐어요. 자막과 연습은 계속 쓸 수 있어요. 영상은 YouTube에서 열어 보세요.|此页面屏蔽了 YouTube，或频道关闭了嵌入功能。字幕和练习仍可使用。请在 YouTube 上打开视频观看。|Esta página bloquea YouTube o el canal desactivó la inserción. Los subtítulos y la práctica siguen funcionando. Abre el vídeo en YouTube para verlo.
 Open on YouTube|Mở trên YouTube|YouTubeで開く|YouTube에서 열기|在 YouTube 打开|Abrir en YouTube
+Sign in to Mochi English|Đăng nhập Mochi English|Mochi English にログイン|Mochi English 로그인|登录 Mochi English|Inicia sesión en Mochi English
+Save your progress and use it on every device.|Lưu tiến độ học và dùng trên mọi thiết bị.|学習の進捗を保存して、どの端末でも使えます。|진도를 저장하고 모든 기기에서 이용하세요.|保存学习进度，在所有设备上使用。|Guarda tu progreso y úsalo en todos tus dispositivos.
+Sign in to start learning with Mochi English. It is free.|Đăng nhập để bắt đầu học với Mochi English. Hoàn toàn miễn phí.|ログインして Mochi English で学習を始めましょう。無料です。|로그인하고 Mochi English로 공부를 시작하세요. 무료예요.|登录即可开始使用 Mochi English 学习，完全免费。|Inicia sesión para empezar a aprender con Mochi English. Es gratis.
+Sign in to start your free trial|Đăng nhập để bắt đầu dùng thử miễn phí|ログインして無料トライアルを開始|로그인하고 무료 체험을 시작하세요|登录后开始免费试用|Inicia sesión para empezar tu prueba gratis
+Continue with Google|Tiếp tục với Google|Google で続ける|Google로 계속하기|使用 Google 继续|Continuar con Google
+Continue with Facebook|Tiếp tục với Facebook|Facebook で続ける|Facebook으로 계속하기|使用 Facebook 继续|Continuar con Facebook
+or|hoặc|または|또는|或|o
+Password|Mật khẩu|パスワード|비밀번호|密码|Contraseña
+Sign in|Đăng nhập|ログイン|로그인|登录|Iniciar sesión
+Create account|Tạo tài khoản|アカウントを作成|계정 만들기|创建账户|Crear cuenta
+New here? Create an account|Bạn mới? Tạo tài khoản|はじめての方はアカウントを作成|처음이세요? 계정 만들기|新用户？创建账户|¿Eres nuevo? Crea una cuenta
+Already have an account? Sign in|Đã có tài khoản? Đăng nhập|アカウントをお持ちの方はログイン|이미 계정이 있나요? 로그인|已有账户？登录|¿Ya tienes cuenta? Inicia sesión
+Forgot password?|Quên mật khẩu?|パスワードをお忘れですか？|비밀번호를 잊으셨나요?|忘记密码？|¿Olvidaste tu contraseña?
+Demo mode: sign-in is simulated until the site owner connects Firebase.|Chế độ demo: đăng nhập đang được giả lập cho đến khi chủ web kết nối Firebase.|デモモード：サイト管理者が Firebase を接続するまで、ログインは仮の動作です。|데모 모드: 운영자가 Firebase를 연결하기 전까지 로그인은 시뮬레이션이에요.|演示模式：在站长连接 Firebase 之前，登录为模拟。|Modo demo: el inicio de sesión es simulado hasta que el propietario conecte Firebase.
+Sign in to keep your progress|Đăng nhập để giữ tiến độ học|ログインして進捗を保存|로그인하고 진도를 저장하세요|登录以保存进度|Inicia sesión para guardar tu progreso
+Your notebook, streak and saved sentences follow you to every device.|Sổ tay, chuỗi ngày học và câu đã lưu đi theo bạn trên mọi thiết bị.|ノート、連続学習日数、保存した文がすべての端末で使えます。|노트, 연속 학습일, 저장한 문장이 모든 기기에서 함께해요.|笔记本、连续学习天数和已保存句子在所有设备同步。|Tu cuaderno, tu racha y tus frases te acompañan en todos tus dispositivos.
+Sign in or create account|Đăng nhập hoặc tạo tài khoản|ログインまたはアカウント作成|로그인 또는 계정 만들기|登录或创建账户|Inicia sesión o crea una cuenta
+Signed in with {0}|Đã đăng nhập bằng {0}|{0} でログイン中|{0}(으)로 로그인됨|已通过 {0} 登录|Sesión iniciada con {0}
+Progress syncs to your account|Tiến độ được đồng bộ vào tài khoản|進捗はアカウントに同期されます|진도가 계정에 동기화돼요|进度会同步到你的账户|Tu progreso se sincroniza con tu cuenta
+Demo account · progress stays on this device|Tài khoản demo · tiến độ lưu trên thiết bị này|デモアカウント · 進捗はこの端末に保存|데모 계정 · 진도는 이 기기에 저장|演示账户 · 进度保存在本设备|Cuenta demo · el progreso se queda en este dispositivo
+Sign out|Đăng xuất|ログアウト|로그아웃|退出登录|Cerrar sesión
+Signed out|Đã đăng xuất|ログアウトしました|로그아웃했어요|已退出登录|Sesión cerrada
+Signed in|Đã đăng nhập|ログインしました|로그인했어요|已登录|Sesión iniciada
+Email or password is incorrect.|Email hoặc mật khẩu không đúng.|メールアドレスまたはパスワードが正しくありません。|이메일 또는 비밀번호가 올바르지 않아요.|邮箱或密码不正确。|El correo o la contraseña no son correctos.
+Enter a valid email address.|Nhập địa chỉ email hợp lệ.|有効なメールアドレスを入力してください。|올바른 이메일 주소를 입력하세요.|请输入有效的邮箱地址。|Introduce un correo válido.
+This email already has an account. Sign in instead.|Email này đã có tài khoản. Hãy đăng nhập.|このメールアドレスは登録済みです。ログインしてください。|이미 가입된 이메일이에요. 로그인해 주세요.|该邮箱已注册，请直接登录。|Este correo ya tiene una cuenta. Inicia sesión.
+Use at least 6 characters for your password.|Mật khẩu cần ít nhất 6 ký tự.|パスワードは6文字以上にしてください。|비밀번호는 6자 이상이어야 해요.|密码至少需要 6 个字符。|Usa al menos 6 caracteres en la contraseña.
+This email is linked to another sign-in method. Try another option.|Email này đã đăng ký bằng cách đăng nhập khác. Hãy thử cách khác.|このメールアドレスは別のログイン方法で登録されています。別の方法をお試しください。|이 이메일은 다른 로그인 방식에 연결돼 있어요. 다른 방법을 시도하세요.|该邮箱已绑定其他登录方式，请换一种方式。|Este correo usa otro método de inicio de sesión. Prueba otra opción.
+This website address is not authorised in Firebase yet.|Địa chỉ web này chưa được cho phép trong Firebase.|このサイトのアドレスはまだ Firebase で許可されていません。|이 웹사이트 주소가 아직 Firebase에서 승인되지 않았어요.|此网址尚未在 Firebase 中授权。|Esta dirección web aún no está autorizada en Firebase.
+Sign-in failed. Please try again.|Đăng nhập không thành công. Vui lòng thử lại.|ログインできませんでした。もう一度お試しください。|로그인에 실패했어요. 다시 시도해 주세요.|登录失败，请重试。|No se pudo iniciar sesión. Inténtalo de nuevo.
+Enter your email first.|Hãy nhập email trước.|先にメールアドレスを入力してください。|먼저 이메일을 입력하세요.|请先输入邮箱。|Primero introduce tu correo.
+We sent a password reset link to your email.|Đã gửi link đặt lại mật khẩu vào email của bạn.|パスワード再設定リンクをメールで送りました。|비밀번호 재설정 링크를 이메일로 보냈어요.|我们已向你的邮箱发送重置密码链接。|Te enviamos un enlace para restablecer la contraseña.
+Sign-in is unavailable right now|Hiện chưa đăng nhập được|現在ログインできません|지금은 로그인할 수 없어요|暂时无法登录|El inicio de sesión no está disponible ahora
+Could not load your saved progress|Không tải được tiến độ đã lưu|保存した進捗を読み込めませんでした|저장된 진도를 불러오지 못했어요|无法加载已保存的进度|No se pudo cargar tu progreso guardado
 Audio lesson|Bài nghe|音声レッスン|오디오 레슨|音频课程|Lección de audio
 Fetching subtitles|Đang lấy phụ đề|字幕を取得中|자막을 가져오는 중|正在获取字幕|Obteniendo subtítulos
 Audio preview|Bản nghe thử|音声プレビュー|오디오 미리듣기|音频预览|Vista previa de audio
@@ -1354,7 +1420,8 @@ Your own video|Video của bạn|自分の動画|내 영상|你的视频|Tu prop
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const load=(k,d)=>{try{const v=localStorage.getItem('mochi2_'+k);return v?JSON.parse(v):d}catch(e){return d}};
-const save=(k,v)=>{try{localStorage.setItem('mochi2_'+k,JSON.stringify(v))}catch(e){}};
+const save=(k,v)=>{try{localStorage.setItem('mochi2_'+k,JSON.stringify(v))}catch(e){};onSaved(k)};
+let fb=null,user=null,pushT=null,gateOn=false,afterAuth=null,authMode='signin';
 const uid=()=>Math.random().toString(36).slice(2,9);
 const navLang=(navigator.language||'en').slice(0,2).toLowerCase();
 let prefs=Object.assign({name:'',email:'',avatar:'🎧',level:'A2',extra:[],speed:1,lineByLine:false,accent:'en-US',theme:'system',ui:UI_LANGS[navLang]?navLang:'en'},load('prefs',{}));
@@ -1398,9 +1465,9 @@ function renderPlan(){const v=isVip();const c=$('#planChip');c.textContent=v?'�
 $('#planChip').onclick=()=>isVip()?go('account'):openPaywall('');
 $('#hdrAvatar').onclick=()=>go('account');
 $('#payClose').onclick=()=>$('#payModal').hidden=true;
-$('#payGo').onclick=()=>{save('plan','vip');save('planSince',new Date().toISOString());$('#payModal').hidden=true;refreshAll();toast('Welcome to VIP 👑 Everything is unlocked.')};
-$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.hidden=true}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){$$('.modal').forEach(m=>m.hidden=true);$('#pop').hidden=true}});
+$('#payGo').onclick=()=>{if(CONFIG.requireSignIn!=='never'&&!user){$('#payModal').hidden=true;afterAuth=()=>openPaywall('');openAuth('Sign in to start your free trial');return}save('plan','vip');save('planSince',new Date().toISOString());$('#payModal').hidden=true;refreshAll();toast('Welcome to VIP 👑 Everything is unlocked.')};
+$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m&&!(m.id==='authModal'&&gateOn))m.hidden=true}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$$('.modal').forEach(m=>{if(!(m.id==='authModal'&&gateOn))m.hidden=true});$('#pop').hidden=true}});
 
 /* ---------- language ---------- */
 /* first visit: translate into the language of the learner's device (zh-TW/HK → Traditional Chinese) */
@@ -1799,10 +1866,10 @@ async function renderLangPreview(){const box=$('#langPreview');const c={en:PREVI
   draw();let ch=false;for(const l of ls){if(!trOf(c,l)&&await machineTr(c.en,l))ch=true}if(ch)draw()}
 function renderAccount(){
   $('#hdrAvatar').textContent=prefs.avatar;$('#pAvatar').textContent=prefs.avatar;
-  $('#pName').textContent=prefs.name||'Learner';$('#pEmail').textContent=prefs.email||'Guest · progress is saved on this device';
+  $('#pName').textContent=prefs.name||(user&&user.name)||'Learner';$('#pEmail').textContent=user?(user.email||''):'Guest · progress is saved on this device';renderAuthBox();
   $('#helloName').textContent=prefs.name?t('Hi {0} 👋',prefs.name):t('Hi there 👋');
   $('#sUi').innerHTML=Object.entries(UI_LANGS).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('');$('#sUi').value=prefs.ui;
-  $('#sName').value=prefs.name;$('#sEmail').value=prefs.email;$('#sLevel').value=prefs.level;
+  $('#sName').value=prefs.name;$('#sLevel').value=prefs.level;
   $('#avatars').innerHTML=AVATARS.map(a=>`<button data-a="${a}" class="${a===prefs.avatar?'on':''}" aria-label="Choose avatar ${a}">${a}</button>`).join('');
   renderPlanBox();
   langOptions($('#sLang'));
@@ -1813,7 +1880,7 @@ function renderAccount(){
 }
 $('#avatars').onclick=e=>{const b=e.target.closest('[data-a]');if(!b)return;prefs.avatar=b.dataset.a;savePrefs();renderAccount()};
 $('#saveProfile').onclick=()=>{const ui=$('#sUi').value,changed=ui!==prefs.ui;
-  prefs.name=$('#sName').value.trim();prefs.email=$('#sEmail').value.trim();prefs.level=$('#sLevel').value;prefs.ui=ui;savePrefs();
+  prefs.name=$('#sName').value.trim();prefs.level=$('#sLevel').value;prefs.ui=ui;savePrefs();
   if(changed){setUI(ui);if(ui!=='en'&&LANGS[ui]&&lang!==ui)setLang(ui)}
   renderAccount();renderEpisodes();toast(t('Settings saved')+' ✅')};
 $('#sLang').onchange=e=>setLang(e.target.value);
@@ -1828,6 +1895,69 @@ $('#resetBtn').onclick=()=>$('#resetBox').hidden=false;
 $('#resetNo').onclick=()=>$('#resetBox').hidden=true;
 $('#resetYes').onclick=()=>{notes=[];quotes=[];days=[];doneEps=new Set();learned=new Set();['notes','quotes','days','doneEps','gram'].forEach(k=>save(k,[]));save('best',{});$('#resetBox').hidden=true;refreshAll();toast('Learning progress reset')};
 
+/* ---------- sign-in & cloud sync (Firebase) ---------- */
+const FB_VER='10.12.2', SYNC_KEYS=['notes','quotes','days','doneEps','gram','best','prefs','lang'];
+const fbOn=()=>!!(CONFIG.firebase&&CONFIG.firebase.apiKey);
+const PROV_NAME={'google.com':'Google','facebook.com':'Facebook',password:'Email',google:'Google',facebook:'Facebook',email:'Email'};
+function onSaved(k){if(user&&!user.demo&&SYNC_KEYS.includes(k)){clearTimeout(pushT);pushT=setTimeout(pushCloud,1500)}}
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+async function initAuth(){
+  if(!fbOn()){user=load('demoUser',null);authReady();return}
+  try{for(const m of ['app','auth','firestore'])await loadScript(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-${m}-compat.js`);
+    firebase.initializeApp(CONFIG.firebase);fb={auth:firebase.auth(),db:firebase.firestore()};
+    fb.auth.onAuthStateChanged(async u=>{user=u?{uid:u.uid,name:u.displayName||'',email:u.email||'',provider:(u.providerData[0]||{}).providerId||'password'}:null;if(user)await pullCloud();authReady()});
+  }catch(e){toast(t('Sign-in is unavailable right now'));authReady()}
+}
+function authReady(){renderAccount();
+  if(user){if(gateOn||!$('#authModal').hidden){gateOn=false;$('#authModal').hidden=true}if(afterAuth){const f=afterAuth;afterAuth=null;f()}}
+  else if(CONFIG.requireSignIn==='always')openAuth('Sign in to start learning with Mochi English. It is free.',true)}
+function openAuth(reason,gate){gateOn=!!gate;$('#authClose').hidden=gateOn;$('#authReason').textContent=t(reason||'Save your progress and use it on every device.');
+  const allow=CONFIG.signInWith||[];$$('#authModal [data-prov]').forEach(b=>b.hidden=!allow.includes(b.dataset.prov));
+  $('#emailForm').hidden=!allow.includes('email');$('#authOr').hidden=!allow.includes('email')||!allow.some(x=>x!=='email');
+  $('#authDemo').hidden=fbOn();$('#authErr').hidden=true;setAuthMode('signin');$('#authModal').hidden=false}
+function setAuthMode(m){authMode=m;$('#aSubmit').textContent=t(m==='signup'?'Create account':'Sign in');$('#aToggle').textContent=t(m==='signup'?'Already have an account? Sign in':'New here? Create an account');$('#aPass').autocomplete=m==='signup'?'new-password':'current-password'}
+function authMsg(m,ok){const el=$('#authErr');el.textContent=t(m);el.style.color=ok?'var(--mint)':'';el.hidden=false}
+function authErr(e){const c=(e&&e.code)||'';if(c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request')return;
+  authMsg({'auth/invalid-credential':'Email or password is incorrect.','auth/wrong-password':'Email or password is incorrect.','auth/user-not-found':'Email or password is incorrect.','auth/invalid-email':'Enter a valid email address.',
+    'auth/email-already-in-use':'This email already has an account. Sign in instead.','auth/weak-password':'Use at least 6 characters for your password.',
+    'auth/account-exists-with-different-credential':'This email is linked to another sign-in method. Try another option.','auth/unauthorized-domain':'This website address is not authorised in Firebase yet.'}[c]||'Sign-in failed. Please try again.')}
+function demoSignIn(prov,email){user={uid:'demo',demo:true,name:prefs.name||'',email:email||'learner@example.com',provider:prov};save('demoUser',user);authReady();toast(t('Signed in')+' ✅')}
+async function signInWith(prov){
+  if(!fbOn())return demoSignIn(prov);
+  const p=prov==='google'?new firebase.auth.GoogleAuthProvider():new firebase.auth.FacebookAuthProvider();
+  try{await fb.auth.signInWithPopup(p)}catch(e){if(/popup-blocked|operation-not-supported/.test(e.code||''))return fb.auth.signInWithRedirect(p);authErr(e)}}
+$$('#authModal [data-prov]').forEach(b=>b.onclick=()=>signInWith(b.dataset.prov));
+$('#authClose').onclick=()=>{if(!gateOn)$('#authModal').hidden=true};
+$('#aToggle').onclick=()=>{setAuthMode(authMode==='signup'?'signin':'signup');$('#authErr').hidden=true};
+$('#emailForm').addEventListener('submit',async e=>{e.preventDefault();const em=$('#aEmail').value.trim(),pw=$('#aPass').value;
+  if(!/^\S+@\S+\.\S+$/.test(em))return authMsg('Enter a valid email address.');if(pw.length<6)return authMsg('Use at least 6 characters for your password.');
+  if(!fbOn())return demoSignIn('email',em);
+  try{authMode==='signup'?await fb.auth.createUserWithEmailAndPassword(em,pw):await fb.auth.signInWithEmailAndPassword(em,pw)}catch(err){authErr(err)}});
+$('#aForgot').onclick=async()=>{const em=$('#aEmail').value.trim();if(!em)return authMsg('Enter your email first.');
+  if(fbOn()){try{await fb.auth.sendPasswordResetEmail(em)}catch(e){return authErr(e)}}authMsg('We sent a password reset link to your email.',true)};
+function mergeBy(arr,key){const seen=new Set();return arr.filter(x=>{const k=key(x);if(seen.has(k))return false;seen.add(k);return true})}
+async function pullCloud(){
+  try{const snap=await fb.db.collection('users').doc(user.uid).get();const d=snap.exists?((snap.data()||{}).data||{}):{};
+    notes=mergeBy([...(d.notes||[]),...notes],n=>(n.w||n.id||'').toLowerCase()||n.id);
+    quotes=mergeBy([...(d.quotes||[]),...quotes],q=>q.en);
+    days=[...new Set([...(d.days||[]),...days])].sort();
+    doneEps=new Set([...(d.doneEps||[]),...doneEps]);learned=new Set([...(d.gram||[]),...learned]);
+    const best=load('best',{});Object.entries(d.best||{}).forEach(([k,v])=>best[k]=Math.max(best[k]??0,v));
+    if(d.prefs)prefs=Object.assign(prefs,d.prefs);if(!prefs.name&&user.name)prefs.name=user.name;if(d.lang)lang=d.lang;
+    save('notes',notes);save('quotes',quotes);save('days',days);save('doneEps',[...doneEps]);save('gram',[...learned]);save('best',best);savePrefs();save('lang',lang);
+    $('#langSel').value=lang;applyTheme(false);setUI(prefs.ui);await pushCloud();
+  }catch(e){toast(t('Could not load your saved progress'))}}
+async function pushCloud(){if(!user||user.demo||!fb)return;const data={};SYNC_KEYS.forEach(k=>{const v=load(k,null);if(v!==null)data[k]=v});
+  try{await fb.db.collection('users').doc(user.uid).set({data,profile:{name:prefs.name||user.name||'',email:user.email||''},updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})}catch(e){}}
+async function signOutUser(){
+  if(user&&!user.demo&&fb){clearTimeout(pushT);await pushCloud();await fb.auth.signOut()}else save('demoUser',null);
+  user=null;['notes','quotes','days','doneEps','gram','best'].forEach(k=>{try{localStorage.removeItem('mochi2_'+k)}catch(e){}});
+  notes=[];quotes=[];days=[];doneEps=new Set();learned=new Set();refreshAll();authReady();toast(t('Signed out'))}
+function renderAuthBox(){const box=$('#authBox');if(!box)return;
+  if(!user){box.innerHTML=`<div class="authcta"><b>${esc(t('Sign in to keep your progress'))}</b><span class="muted small">${esc(t('Your notebook, streak and saved sentences follow you to every device.'))}</span><div class="row"><button class="btn pri" id="openAuth">${esc(t('Sign in or create account'))}</button></div></div>`;$('#openAuth').onclick=()=>openAuth('');return}
+  box.innerHTML=`<div class="authin"><div class="row"><span class="chip A1">✓ ${esc(t('Signed in with {0}',PROV_NAME[user.provider]||'Email'))}</span></div><span class="muted small">☁️ ${esc(t(user.demo?'Demo account · progress stays on this device':'Progress syncs to your account'))}</span><div class="row"><button class="btn" id="signOutBtn">${esc(t('Sign out'))}</button></div></div>`;
+  $('#signOutBtn').onclick=signOutUser}
+
 /* ---------- init ---------- */
 function refreshAll(){renderPlan();renderAccount();renderEpisodes();renderCueList();renderCurrent();renderGram();renderVocab();renderTests();renderNotes();renderStats();if(isVip())ensureTr([cur,cur+1])}
 const last=EPISODES.find(e=>e.id===load('lastEp',''))||EPISODES[0];
@@ -1839,6 +1969,7 @@ loadEpMedia(EPISODES.find(e=>e.id===curEp)||EPISODES[0]);
 new MutationObserver(ms=>{for(const m of ms)m.addedNodes.forEach(i18nRoot)}).observe(document.body,{childList:true,subtree:true});
 setUI(prefs.ui);
 go(location.hash.slice(1)||'home');
+initAuth();
 try{speechSynthesis.getVoices()}catch(e){}
 </script>
 </body>
