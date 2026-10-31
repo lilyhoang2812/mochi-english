@@ -255,6 +255,10 @@ details.setup summary{font-weight:700;cursor:pointer;font-family:var(--f-display
 .ytbar input[type=text]:focus{outline:none}
 @media (max-width:520px){.ytbar .btn{flex:1 1 100%;justify-content:center}}
 
+.vword{border:0;background:none;padding:0;font:inherit;font-weight:700;font-size:1.08rem;color:var(--ink);cursor:pointer;text-align:left}
+.vword:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.vmean{font-weight:500}
+
 /* account */
 input[type=email]{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;width:100%;min-width:0}
 input[type=email]:focus{border-color:var(--sky);outline:none}
@@ -1399,7 +1403,10 @@ $$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.hidden=
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$$('.modal').forEach(m=>m.hidden=true);$('#pop').hidden=true}});
 
 /* ---------- language ---------- */
-let lang=load('lang','vi');
+/* first visit: translate into the language of the learner's device (zh-TW/HK → Traditional Chinese) */
+const navFull=(navigator.language||'').toLowerCase();
+const deviceLang=/^zh-(tw|hk|mo)|hant/.test(navFull)?'zh-TW':(LANGS[navLang]&&navLang!=='en'?navLang:'vi');
+let lang=load('lang',deviceLang);
 function langOptions(sel){sel.innerHTML=Object.entries(LANGS).map(([k,v])=>`<option value="${k}" ${k===lang?'selected':''}>${v}</option>`).join('')}
 langOptions($('#langSel'));
 function setLang(l){lang=l;save('lang',lang);prefs.extra=prefs.extra.filter(x=>x!==l);savePrefs();$('#langSel').value=l;renderCueList();renderCurrent();renderVocab();renderGram();renderAccount();ensureTr([cur,cur+1])}
@@ -1426,7 +1433,8 @@ $('#channelBtn').href=CONFIG.channelUrl;
 const VOCAB=VOCAB_RAW.trim().split('\n').map(l=>{const[w,p,v,lv]=l.split('|');return{w,p,v,l:lv}});
 const VMAP=new Map(VOCAB.map(x=>[x.w.toLowerCase(),x]));
 function localLookup(w){const c=[w,w.replace(/'s$/,''),w.replace(/s$/,''),w.replace(/es$/,''),w.replace(/ies$/,'y'),w.replace(/ied$/,'y'),w.replace(/ed$/,''),w.replace(/d$/,''),w.replace(/ing$/,''),w.replace(/ing$/,'e'),w.replace(/(.)\1ing$/,'$1'),w.replace(/(.)\1ed$/,'$1')];for(const x of c){if(VMAP.has(x))return VMAP.get(x)}return null}
-async function wordTr(entry,word){if(lang==='off')return '';if(lang==='vi'&&entry)return entry.v;return machineTr(entry?entry.w:word,lang)}
+function meaningLang(){return lang!=='off'?lang:(prefs.ui&&prefs.ui!=='en'?prefs.ui:'off')}
+async function wordTr(entry,word){const ml=meaningLang();if(ml==='off')return '';if(ml==='vi'&&entry)return entry.v;return machineTr(entry?entry.w:word,ml)}
 
 /* ---------- dictionary popover ---------- */
 const dictCache={};
@@ -1445,7 +1453,7 @@ async function openPop(el,word,context){
   const r=await lookup(word);if(popWord!==word)return;const tr=await wordTr(r.loc,r.w);if(popWord!==word)return;
   pop.innerHTML=`<div class="row" style="justify-content:space-between"><div class="pw">${esc(r.w)}</div><button class="btn icon ghost" id="popClose" aria-label="Close">✕</button></div>
   <div class="row"><span class="ipa">${esc(r.ipa)}</span>${r.pos?`<span class="chip">${esc(r.pos)}</span>`:''}${r.loc?`<span class="chip ${r.loc.l}">${r.loc.l}</span>`:''}</div>
-  ${lang!=='off'?`<div class="trw">🌐 ${esc(tr||'Translation unavailable right now')}</div>`:''}
+  ${meaningLang()!=='off'?`<div class="trw"><span class="lt">${esc(LANGS[meaningLang()]||meaningLang())}</span>${esc(tr||t('Translation unavailable right now'))}</div>`:''}
   ${r.defs.map(d=>`<div class="def">• <b>${esc(d.pos)}</b>: ${esc(d.d||'')}</div>`).join('')}
   ${!r.defs.length&&!tr?'<div class="def">No entry found. You can still save it and add your own meaning.</div>':''}
   <div class="row"><button class="btn icon" id="popSay" aria-label="Listen">🔊</button><button class="btn pri" id="popAdd">⭐ Save to notebook</button></div>`;
@@ -1728,8 +1736,15 @@ $$('#lvSeg button').forEach(b=>b.onclick=()=>{vLv=b.dataset.v;vShown=48;$$('#lvS
 function vFiltered(){const q=$('#vSearch').value.toLowerCase();return VOCAB.filter(x=>(vLv==='All'||x.l===vLv)&&(!q||x.w.toLowerCase().includes(q)||(lang==='vi'&&x.v.toLowerCase().includes(q))))}
 function renderVocab(){const list=vFiltered();const saved=new Set(notes.map(n=>n.w.toLowerCase()));
   $('#vCount').textContent=t('{0} words in the library. Tap 🔊 to listen, 🔎 to look up, ⭐ to save.',VOCAB.length);
-  $('#vGrid').innerHTML=list.slice(0,vShown).map(x=>`<div class="vcard"><div class="vw">${esc(x.w)} <span class="chip ${x.l||''}">${esc(x.l||'')}</span></div><div class="muted small">${esc(POS[x.p]||x.p)}</div>${lang==='vi'?`<div>${esc(x.v)}</div>`:''}<div class="row"><button class="btn icon ghost" data-say="${esc(x.w)}" aria-label="Listen">🔊</button><button class="btn icon ghost" data-look="${esc(x.w)}" aria-label="Look up">🔎</button><button class="btn icon ghost" data-add="${esc(x.w)}" aria-label="Save">${saved.has(x.w.toLowerCase())?'✅':'⭐'}</button></div></div>`).join('')||'<p class="muted">No words match.</p>';
+  const ml=meaningLang();
+  $('#vGrid').innerHTML=list.slice(0,vShown).map(x=>{const m=ml==='off'?'':ml==='vi'?x.v:(mt[ml+'|'+x.w]||'');
+    return `<div class="vcard"><div class="vw"><button class="vword" data-look="${esc(x.w)}">${esc(x.w)}</button> <span class="chip ${x.l||''}">${esc(x.l||'')}</span></div><div class="muted small">${esc(POS[x.p]||x.p)}</div>${ml==='off'?'':`<div class="vmean" data-mw="${esc(x.w)}" data-noi18n>${m?esc(m):'<span class="muted">…</span>'}</div>`}<div class="row"><button class="btn icon ghost" data-say="${esc(x.w)}" aria-label="Listen">🔊</button><button class="btn icon ghost" data-look="${esc(x.w)}" aria-label="Look up">🔎</button><button class="btn icon ghost" data-add="${esc(x.w)}" aria-label="Save">${saved.has(x.w.toLowerCase())?'✅':'⭐'}</button></div></div>`}).join('')||'<p class="muted">No words match.</p>';
+  fillMeanings(ml);
   $('#vMore').hidden=list.length<=vShown}
+let fillRun=0;
+async function fillMeanings(ml){if(ml==='off'||ml==='vi')return;const run=++fillRun;const els=[...$('#vGrid').querySelectorAll('[data-mw]')].filter(el=>!mt[ml+'|'+el.dataset.mw]);
+  const work=async()=>{while(els.length&&run===fillRun){const el=els.shift();const tr=await machineTr(el.dataset.mw,ml);if(run===fillRun&&el.isConnected)el.textContent=tr||'—'}};
+  await Promise.all([work(),work(),work(),work()])}
 $('#vGrid').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.say)speak(b.dataset.say,.9);
   if(b.dataset.look){e.stopPropagation();openPop(b,b.dataset.look,'')}
