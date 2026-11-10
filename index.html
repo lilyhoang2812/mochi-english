@@ -270,6 +270,21 @@ details.setup summary{font-weight:700;cursor:pointer;font-family:var(--f-display
 .authin{display:grid;gap:8px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
 .autherr{color:var(--bad);margin:0;font-size:.88rem}
 
+/* key words panel */
+.kwbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+.kwlist{max-height:430px;overflow-y:auto;display:grid;gap:6px;padding-right:4px}
+.kw{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:8px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface)}
+.kw .top{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;min-width:0}
+.kwt{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--ink);cursor:pointer;text-align:left}
+.kwt:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.kw .ipa{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;color:var(--sky)}
+.kw .cnt{font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.kw .mean{grid-column:1/2;font-size:.9rem}
+.kw .acts{grid-row:1/3;grid-column:2;display:flex;align-items:center;gap:2px}
+.kw.phrase{border-left:3px solid var(--gold)}
+.kw.saved .kwt{color:var(--mint)}
+.kwlock{border:1.5px dashed var(--gold);border-radius:12px;padding:10px;text-align:center;font-weight:600;background:transparent;cursor:pointer;color:var(--ink)}
+
 /* admin */
 .admgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px;align-items:start}
 .admrow{display:flex;gap:10px;flex-wrap:wrap}
@@ -502,6 +517,10 @@ input[type=email]:focus,input[type=password]:focus{border-color:var(--sky);outli
             <textarea id="subEn" placeholder="0:01&#10;Hi everyone, welcome back.&#10;0:04&#10;Today we're talking about..."></textarea>
           </label>
           <p class="full muted small" style="margin:0">💡 On YouTube, open <b>…More</b> under the video → <b>Show transcript</b>, select everything, copy it and paste it above. Translations are added automatically in the language you pick.</p>
+          <div class="full aibox small" id="bmkBox"><b>📋 Copy the whole transcript in one click</b>
+            <span>1. Drag this button up to your browser's bookmarks bar (computer only): <a class="btn" id="bmk" href="#">📋 Mochi · Copy transcript</a></span>
+            <span>2. On YouTube, open the transcript (…More → Show transcript), then click the bookmark. The full transcript with timings is copied.</span>
+            <span>3. Come back here, paste it below and press Load lesson.</span></div>
           <div class="row full"><button class="btn pri" id="loadLesson">🚀 Load lesson</button></div>
         </div>
       </details>
@@ -512,8 +531,14 @@ input[type=email]:focus,input[type=password]:focus{border-color:var(--sky);outli
         <div class="panel-tabs seg" id="sideSeg">
           <button data-p="subs" class="on">📜 Transcript</button>
           <button data-p="note">📝 Quick notes</button>
+          <button data-p="kw">📒 Key words</button>
         </div>
         <div id="p-subs"><div class="cuelist" id="cueList" data-noi18n></div></div>
+        <div id="p-kw" hidden>
+          <div class="kwbar"><div class="seg" id="kwSeg"><button data-f="all" class="on">All</button><button data-f="word">Words</button><button data-f="phrase">Phrases</button></div><button class="btn" id="kwSaveAll">⭐ Save all</button></div>
+          <p class="muted small" style="margin:0 0 8px" id="kwInfo"></p>
+          <div class="kwlist" id="kwList"></div>
+        </div>
         <div id="p-note" hidden>
           <div class="notes" id="quickNotes"></div>
           <div class="row" style="margin-top:10px"><button class="btn" id="addNoteQuick">＋ Add word</button></div>
@@ -583,6 +608,7 @@ input[type=email]:focus,input[type=password]:focus{border-color:var(--sky);outli
       <h3 id="tTitle"></h3>
       <span class="timer" id="tTimer">00:00</span>
     </div>
+    <audio id="tAudio" controls preload="metadata" hidden style="width:100%"></audio>
     <div class="runner" id="runner">
       <div class="card passage" id="tPassage" data-noi18n></div>
       <div class="card"><div id="tQs" data-noi18n></div>
@@ -667,8 +693,11 @@ input[type=email]:focus,input[type=password]:focus{border-color:var(--sky);outli
 </section>
 <!-- ADMIN (site owner only) -->
 <section class="view" id="v-admin" hidden>
-  <div class="row" style="justify-content:space-between"><h2>Admin · Episodes</h2><button class="btn pri" id="admNew">＋ New episode</button></div>
-  <p class="card note small" id="admDemo" hidden style="margin:0">Demo mode: episodes you publish are saved on this device only. Connect Firebase to publish for every learner.</p>
+  <div class="row" style="justify-content:space-between"><h2>Admin</h2>
+    <div class="seg" id="admTabs"><button data-tab="episodes" class="on">Episodes</button><button data-tab="vocab">Vocabulary</button><button data-tab="grammar">Grammar</button><button data-tab="tests">Tests</button></div></div>
+  <p class="card note small" id="admDemo" hidden style="margin:0">Demo mode: everything you publish is saved on this device only. Connect Firebase to publish for every learner.</p>
+  <div id="admP-episodes" class="sgroup">
+  <div class="row" style="justify-content:flex-end"><button class="btn pri" id="admNew">＋ New episode</button></div>
   <div class="admgrid">
     <div class="card sgroup"><h3>Your episodes</h3><div class="notes" id="admList"></div></div>
     <form class="card sgroup" id="admForm" autocomplete="off" novalidate>
@@ -715,6 +744,67 @@ input[type=email]:focus,input[type=password]:focus{border-color:var(--sky);outli
       </div>
       <p class="autherr" id="eErr" hidden></p>
       <div class="row"><button class="btn pri" type="submit" id="eSave">Publish</button><button class="btn ghost" type="button" id="eCancel">Clear form</button></div>
+    </form>
+  </div>
+  </div>
+
+  <!-- admin: vocabulary -->
+  <div id="admP-vocab" class="admgrid" hidden>
+    <div class="card sgroup">
+      <h3>Import words</h3>
+      <p class="muted small" style="margin:0">Copy the rows from Excel or Google Sheets and paste them here. The first row names the columns: word, pos, level, then one column per language code (vi, zh, ja, ko, es…). Existing words are updated, new words are added.</p>
+      <div class="row"><button type="button" class="btn" id="vTpl">Insert example</button></div>
+      <textarea id="vImp" rows="10" placeholder="word&#9;pos&#9;level&#9;vi&#9;zh"></textarea>
+      <div class="muted small" id="vImpInfo"></div>
+      <div class="row"><button class="btn pri" type="button" id="vImpGo">Import</button></div>
+      <label class="chk"><input type="checkbox" class="check" id="vHideBase"> Hide the built-in sample words</label>
+    </div>
+    <div class="card sgroup">
+      <div class="row" style="justify-content:space-between"><h3>Word list</h3><span class="muted small" id="vAdmCount"></span></div>
+      <div class="row"><input type="search" id="vAdmSearch" placeholder="Search a word" style="flex:1 1 200px"><button type="button" class="btn" id="vAdd">＋ Add a word</button></div>
+      <form class="aibox" id="vForm" hidden novalidate>
+        <div class="admrow"><label class="grow">Word<input type="text" id="vW"></label><label>Type<select id="vP"><option value="n">noun</option><option value="v">verb</option><option value="adj">adjective</option><option value="adv">adverb</option><option value="prep">preposition</option><option value="conj">conjunction</option><option value="pron">pronoun</option><option value="phr">phrase</option></select></label><label>Level<select id="vL"><option value="">–</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option></select></label></div>
+        <label>Meanings, one language per line<textarea id="vM" rows="4" placeholder="vi: bỏ rơi, từ bỏ&#10;zh: 放弃"></textarea></label>
+        <p class="autherr" id="vErr" hidden></p>
+        <div class="row"><button class="btn pri" type="submit">Save word</button><button class="btn danger" type="button" id="vDel">Delete</button><button class="btn ghost" type="button" id="vCancel">Cancel</button></div>
+      </form>
+      <div class="notes" id="vAdmList"></div>
+    </div>
+  </div>
+
+  <!-- admin: grammar -->
+  <div id="admP-grammar" class="admgrid" hidden>
+    <div class="card sgroup"><div class="row" style="justify-content:space-between"><h3>Grammar topics</h3><button type="button" class="btn pri" id="gNew">＋ New topic</button></div><div class="notes" id="gAdmList"></div></div>
+    <form class="card sgroup" id="gForm" novalidate>
+      <h3 id="gFormTitle">New topic</h3>
+      <div class="admrow"><label class="grow">Title<input type="text" id="gT" placeholder="e.g. Present Perfect"></label><label>Icon<input type="text" id="gI" maxlength="4" style="width:70px" placeholder="📘"></label></div>
+      <label>Group<input type="text" id="gG" list="gGroups" placeholder="e.g. Tenses"><datalist id="gGroups"></datalist></label>
+      <label>Formula<textarea id="gF" rows="3" placeholder="S + have/has + V3/-ed"></textarea></label>
+      <label>How to use it<textarea id="gU" rows="3"></textarea></label>
+      <label>Examples, one per line: English | translation<textarea id="gE" rows="4" placeholder="I have lived here since 2020. | Tôi sống ở đây từ năm 2020."></textarea></label>
+      <div class="admrow"><label>Translation language<select id="gEL"></select></label></div>
+      <label class="chk"><input type="checkbox" class="check" id="gFree"> Free for everyone (otherwise VIP)</label>
+      <p class="autherr" id="gErr" hidden></p>
+      <div class="row"><button class="btn pri" type="submit" id="gSave">Publish</button><button class="btn ghost" type="button" id="gCancel">Clear form</button></div>
+    </form>
+  </div>
+
+  <!-- admin: tests -->
+  <div id="admP-tests" class="admgrid" hidden>
+    <div class="card sgroup"><div class="row" style="justify-content:space-between"><h3>Practice tests</h3><button type="button" class="btn pri" id="tNew">＋ New test</button></div><div class="notes" id="tAdmList"></div></div>
+    <form class="card sgroup" id="tForm" novalidate>
+      <h3 id="tFormTitle">New test</h3>
+      <div class="admrow"><label class="grow">Title<input type="text" id="tT" placeholder="e.g. TOEIC Part 5 · Set 2"></label><label>Icon<input type="text" id="tI" maxlength="4" style="width:70px" placeholder="📝"></label><label>Minutes<input type="text" id="tM" inputmode="numeric" style="width:80px" placeholder="10"></label></div>
+      <label>Short description<input type="text" id="tD" placeholder="10 questions · grammar and word forms"></label>
+      <div class="row"><label class="chk"><input type="checkbox" class="check" id="tV"> VIP only</label><label class="chk"><input type="checkbox" class="check" id="tH"> Draft (hidden from learners)</label></div>
+      <label>Audio link for listening tests (optional)<input type="text" id="tA" placeholder="audio/toeic-part2.mp3"></label>
+      <label>Reading passage (optional)<textarea id="tP" rows="5"></textarea></label>
+      <div class="row" style="justify-content:space-between"><b>Questions</b><button type="button" class="btn" id="tTpl">Insert example</button></div>
+      <p class="muted small" style="margin:0">Start each question with Q:, list options as A) B) C) D), then ANS: and EXP: for the explanation. For True / False / Not Given, write only the question and ANS: TRUE, FALSE or NOT GIVEN.</p>
+      <textarea id="tQ" rows="12" data-noi18n></textarea>
+      <div class="muted small" id="tQInfo"></div>
+      <p class="autherr" id="tErr" hidden></p>
+      <div class="row"><button class="btn pri" type="submit" id="tSave">Publish</button><button class="btn ghost" type="button" id="tCancel">Clear form</button></div>
     </form>
   </div>
 </section>
@@ -1121,7 +1211,7 @@ nevertheless|adv|tuy nhiên|B2
 whereas|conj|trong khi (đối lập)|B2`;
 
 /* GRAMMAR — free users see the first CONFIG.freeGrammarTopics topics */
-const GRAMMAR=[
+const BASE_GRAMMAR=[
 {g:'Tenses',i:'☀️',t:'Present Simple',f:'(+) S + V(s/es)\n(–) S + do/does + not + V\n(?) Do/Does + S + V?',u:'Habits, general truths and fixed schedules. Signal words: always, usually, often, every day.',ex:[['She drinks coffee every morning.','Cô ấy uống cà phê mỗi sáng.'],['Water boils at 100 degrees Celsius.','Nước sôi ở 100 độ C.']]},
 {g:'Tenses',i:'🏃',t:'Present Continuous',f:'S + am/is/are + V-ing',u:'Actions happening right now, and arranged plans for the near future. Signal words: now, at the moment, Look!',ex:[['I am studying English now.','Bây giờ tôi đang học tiếng Anh.'],['We are meeting the client tomorrow.','Ngày mai chúng tôi gặp khách hàng.']]},
 {g:'Tenses',i:'✅',t:'Present Perfect',f:'S + have/has + V3/-ed',u:'Life experiences, actions that have just finished, and situations that started in the past and continue now. Signal words: just, already, yet, ever, never, since, for.',ex:[['I have lived here since 2020.','Tôi sống ở đây từ năm 2020.'],['She has just finished the report.','Cô ấy vừa làm xong báo cáo.']]},
@@ -1153,7 +1243,7 @@ const GRAMMAR=[
 
 /* TESTS — original practice sets in TOEIC / IELTS format. vip:true locks a set. */
 const TF=['TRUE','FALSE','NOT GIVEN'];
-const TESTS=[
+const BASE_TESTS=[
 {id:'toeic5',icon:'💼',title:'TOEIC Part 5 · Incomplete Sentences',desc:'10 questions · 6 minutes',time:360,vip:false,qs:[
 {q:'The new software will be installed ___ all computers by Friday.',o:['in','on','at','to'],a:1,e:'We install software on a computer.'},
 {q:'Ms. Tran asked the team to submit their reports ___ the end of the week.',o:['by','until','since','during'],a:0,e:'by + time = a deadline (no later than).'},
@@ -1338,6 +1428,72 @@ Add an audio link or a YouTube link.|Hãy thêm link audio hoặc link YouTube.
 Add English subtitles.|Hãy thêm phụ đề tiếng Anh.
 Draft saved|Đã lưu bản nháp
 Published|Đã đăng
+Admin|Quản trị
+Episodes|Tập podcast
+Tests|Đề luyện
+Demo mode: everything you publish is saved on this device only. Connect Firebase to publish for every learner.|Chế độ demo: mọi thứ bạn đăng chỉ lưu trên máy này. Kết nối Firebase để đăng cho mọi học viên.
+Import words|Nhập từ vựng
+Copy the rows from Excel or Google Sheets and paste them here. The first row names the columns: word, pos, level, then one column per language code (vi, zh, ja, ko, es…). Existing words are updated, new words are added.|Copy các dòng từ Excel hoặc Google Sheets rồi dán vào đây. Dòng đầu là tên cột: word, pos, level, sau đó mỗi ngôn ngữ một cột theo mã (vi, zh, ja, ko, es…). Từ đã có sẽ được cập nhật, từ mới sẽ được thêm.
+Insert example|Chèn ví dụ mẫu
+Import|Nhập
+Hide the built-in sample words|Ẩn bộ từ mẫu có sẵn
+Word list|Danh sách từ
+Search a word|Tìm từ
+Word|Từ
+Type|Loại từ
+Meanings, one language per line|Nghĩa, mỗi ngôn ngữ một dòng
+Save word|Lưu từ
+Delete|Xoá
+Cancel|Huỷ
+Grammar topics|Chủ điểm ngữ pháp
+New topic|Chủ điểm mới
+Edit topic|Sửa chủ điểm
+Group|Nhóm
+Formula|Công thức
+How to use it|Cách dùng
+Examples, one per line: English | translation|Ví dụ, mỗi dòng một câu: Tiếng Anh | bản dịch
+Translation language|Ngôn ngữ bản dịch
+Free for everyone (otherwise VIP)|Miễn phí cho mọi người (bỏ chọn = VIP)
+Practice tests|Đề luyện
+New test|Đề mới
+Edit test|Sửa đề
+Minutes|Số phút
+Short description|Mô tả ngắn
+Audio link for listening tests (optional)|Link audio cho đề nghe (không bắt buộc)
+Reading passage (optional)|Bài đọc (không bắt buộc)
+Questions|Câu hỏi
+Start each question with Q:, list options as A) B) C) D), then ANS: and EXP: for the explanation. For True / False / Not Given, write only the question and ANS: TRUE, FALSE or NOT GIVEN.|Mỗi câu bắt đầu bằng Q:, các lựa chọn ghi A) B) C) D), sau đó ANS: là đáp án và EXP: là giải thích. Với dạng True / False / Not Given, chỉ cần ghi câu hỏi và ANS: TRUE, FALSE hoặc NOT GIVEN.
+{0} words found · meanings in: {1}|Tìm thấy {0} từ · có nghĩa: {1}
+No words found. Check the first row of column names.|Không tìm thấy từ nào. Kiểm tra lại dòng tên cột đầu tiên.
+{0} words saved ({1} new)|Đã lưu {0} từ ({1} từ mới)
+Showing 80 of {0}. Search to find a word.|Đang hiện 80 / {0} từ. Gõ tìm để thấy từ khác.
+Add the word.|Hãy nhập từ.
+Deleted|Đã xoá
+Free|Miễn phí
+Edited sample|Bài mẫu đã sửa
+Undo my edits|Bỏ phần đã sửa
+Add a group.|Hãy nhập nhóm.
+{0} questions|{0} câu hỏi
+{0} questions ready|{0} câu hỏi hợp lệ
+Question {0}: add at least 2 options|Câu {0}: cần ít nhất 2 lựa chọn
+Question {0}: the answer does not match an option|Câu {0}: đáp án không khớp lựa chọn nào
+Add at least one question.|Hãy thêm ít nhất một câu hỏi.
+Key words|Từ vựng bài|キーワード|핵심 단어|重点词汇|Palabras clave
+Words|Từ|単語|단어|单词|Palabras
+Phrases|Cụm từ|フレーズ|구문|短语|Frases
+phrase|cụm từ|フレーズ|구문|短语|frase
+Save all|Lưu tất cả|すべて保存|모두 저장|全部保存|Guardar todo
+{0} words · {1} phrases · tap a word to hear it in the lesson|{0} từ · {1} cụm từ · chạm vào từ để nghe trong bài|単語 {0} · フレーズ {1} · タップすると本文の該当箇所を再生|단어 {0}개 · 구문 {1}개 · 탭하면 해당 부분을 들어요|{0} 个单词 · {1} 个短语 · 点击可听原句|{0} palabras · {1} frases · toca una para oírla en la lección
+Load a lesson to see its key words.|Mở một bài học để xem từ vựng của bài.|レッスンを開くとキーワードが表示されます。|레슨을 열면 핵심 단어가 보여요.|打开一节课即可查看重点词汇。|Abre una lección para ver sus palabras clave.
+{0} more · Unlock the full list with VIP|Còn {0} mục · Mở khoá danh sách đầy đủ với VIP|あと {0} 件 · VIP で全リストを表示|{0}개 더 · VIP로 전체 목록 보기|还有 {0} 个 · 开通 VIP 查看完整列表|{0} más · Desbloquea la lista completa con VIP
+The full word list|Danh sách từ vựng đầy đủ|全単語リスト|전체 단어 목록|完整词汇表|La lista completa de palabras
+Saved {0} words to your notebook|Đã lưu {0} từ vào sổ tay|{0} 語をノートに保存しました|노트에 {0}개 단어를 저장했어요|已将 {0} 个单词存入笔记本|{0} palabras guardadas en tu cuaderno
+Open in Cambridge Dictionary|Mở trong từ điển Cambridge|Cambridge 辞書で開く|Cambridge 사전에서 열기|在剑桥词典中打开|Abrir en el Diccionario Cambridge
+Copy the whole transcript in one click|Copy toàn bộ bản ghi chỉ với 1 cú bấm|ワンクリックで文字起こしを全部コピー|클릭 한 번으로 대본 전체 복사|一键复制完整文字稿|Copia toda la transcripción con un clic
+1. Drag this button up to your browser's bookmarks bar (computer only):|1. Kéo nút này lên thanh dấu trang (bookmark) của trình duyệt (chỉ trên máy tính):|1. このボタンをブラウザのブックマークバーにドラッグ（パソコンのみ）:|1. 이 버튼을 브라우저 북마크바로 끌어다 놓으세요 (컴퓨터만):|1. 把这个按钮拖到浏览器书签栏（仅限电脑）：|1. Arrastra este botón a la barra de marcadores (solo ordenador):
+2. On YouTube, open the transcript (…More → Show transcript), then click the bookmark. The full transcript with timings is copied.|2. Trên YouTube, mở bản ghi (…thêm → Hiện bản ghi), rồi bấm vào dấu trang đó. Toàn bộ bản ghi kèm mốc thời gian sẽ được copy.|2. YouTube で文字起こしを開き（…もっと見る → 文字起こしを表示）、ブックマークをクリック。時間付きで全文がコピーされます。|2. YouTube에서 대본을 연 뒤(…더보기 → 스크립트 표시) 북마크를 클릭하면 시간과 함께 전체가 복사돼요.|2. 在 YouTube 打开文字稿（…更多 → 显示文字稿），再点击书签，带时间的完整文字稿即被复制。|2. En YouTube abre la transcripción (…Más → Mostrar transcripción) y pulsa el marcador. Se copia completa con los tiempos.
+3. Come back here, paste it below and press Load lesson.|3. Quay lại đây, dán vào ô bên dưới và bấm Load lesson.|3. ここに戻り、下に貼り付けて「Load lesson」を押します。|3. 여기로 돌아와 아래에 붙여 넣고 Load lesson을 누르세요.|3. 回到这里粘贴到下方，然后点击 Load lesson。|3. Vuelve aquí, pégala abajo y pulsa Load lesson.
+Drag this button to your bookmarks bar, then use it on YouTube.|Hãy kéo nút này lên thanh dấu trang, rồi dùng nó trên YouTube.|このボタンをブックマークバーにドラッグして、YouTube で使ってください。|이 버튼을 북마크바로 끌어다 놓고 YouTube에서 사용하세요.|请把这个按钮拖到书签栏，然后在 YouTube 上使用。|Arrastra este botón a la barra de marcadores y úsalo en YouTube.
 Audio lesson|Bài nghe|音声レッスン|오디오 레슨|音频课程|Lección de audio
 Fetching subtitles|Đang lấy phụ đề|字幕を取得中|자막을 가져오는 중|正在获取字幕|Obteniendo subtítulos
 Audio preview|Bản nghe thử|音声プレビュー|오디오 미리듣기|音频预览|Vista previa de audio
@@ -1637,11 +1793,15 @@ window.addEventListener('hashchange',()=>go(location.hash.slice(1)));
 $('#channelBtn').href=CONFIG.channelUrl;
 
 /* ---------- vocabulary library ---------- */
-const VOCAB=VOCAB_RAW.trim().split('\n').map(l=>{const[w,p,v,lv]=l.split('|');return{w,p,v,l:lv}});
-const VMAP=new Map(VOCAB.map(x=>[x.w.toLowerCase(),x]));
+const BASE_VOCAB=VOCAB_RAW.trim().split('\n').map(l=>{const[w,p,v,lv]=l.split('|');return{w,p,l:lv,m:{vi:v}}});
+let VOCAB=BASE_VOCAB.slice(), VMAP=new Map(VOCAB.map(x=>[x.w.toLowerCase(),x]));
+const meaningOf=(x,ml)=>(x&&x.m&&x.m[ml])||'';
 function localLookup(w){const c=[w,w.replace(/'s$/,''),w.replace(/s$/,''),w.replace(/es$/,''),w.replace(/ies$/,'y'),w.replace(/ied$/,'y'),w.replace(/ed$/,''),w.replace(/d$/,''),w.replace(/ing$/,''),w.replace(/ing$/,'e'),w.replace(/(.)\1ing$/,'$1'),w.replace(/(.)\1ed$/,'$1')];for(const x of c){if(VMAP.has(x))return VMAP.get(x)}return null}
+const CAMB={vi:'english-vietnamese',zh:'english-chinese-simplified','zh-TW':'english-chinese-traditional',ja:'english-japanese',ko:'english-korean',es:'english-spanish',fr:'english-french',de:'english-german',it:'english-italian',pt:'english-portuguese',ru:'english-russian',tr:'english-turkish',pl:'english-polish',nl:'english-dutch',id:'english-indonesian',th:'english-thai',ar:'english-arabic',uk:'english-ukrainian'};
+function cambridgeUrl(w){return `https://dictionary.cambridge.org/dictionary/${CAMB[meaningLang()]||'english'}/${encodeURIComponent(String(w).toLowerCase().trim().replace(/\s+/g,'-'))}`}
+const cambLink=(w,cls)=>`<a class="${cls||'btn icon ghost'}" href="${cambridgeUrl(w)}" target="_blank" rel="noopener" title="${esc(t('Open in Cambridge Dictionary'))}" aria-label="${esc(t('Open in Cambridge Dictionary'))}">📖</a>`;
 function meaningLang(){return lang!=='off'?lang:(prefs.ui&&prefs.ui!=='en'?prefs.ui:'off')}
-async function wordTr(entry,word){const ml=meaningLang();if(ml==='off')return '';if(ml==='vi'&&entry)return entry.v;return machineTr(entry?entry.w:word,ml)}
+async function wordTr(entry,word){const ml=meaningLang();if(ml==='off')return '';const m=meaningOf(entry,ml);if(m)return m;return machineTr(entry?entry.w:word,ml)}
 
 /* ---------- dictionary popover ---------- */
 const dictCache={};
@@ -1663,7 +1823,7 @@ async function openPop(el,word,context){
   ${meaningLang()!=='off'?`<div class="trw"><span class="lt">${esc(LANGS[meaningLang()]||meaningLang())}</span>${esc(tr||t('Translation unavailable right now'))}</div>`:''}
   ${r.defs.map(d=>`<div class="def">• <b>${esc(d.pos)}</b>: ${esc(d.d||'')}</div>`).join('')}
   ${!r.defs.length&&!tr?'<div class="def">No entry found. You can still save it and add your own meaning.</div>':''}
-  <div class="row"><button class="btn icon" id="popSay" aria-label="Listen">🔊</button><button class="btn pri" id="popAdd">⭐ Save to notebook</button></div>`;
+  <div class="row"><button class="btn icon" id="popSay" aria-label="Listen">🔊</button><button class="btn pri" id="popAdd">⭐ Save to notebook</button><a class="btn" href="${cambridgeUrl(r.w)}" target="_blank" rel="noopener">📖 Cambridge ↗</a></div>`;
   place(pop,el);
   $('#popClose').onclick=()=>pop.hidden=true;$('#popSay').onclick=()=>speak(r.w,.9);
   $('#popAdd').onclick=()=>{addNote({w:r.w,tr,ipa:r.ipa,pos:r.pos,ex:context||''});pop.hidden=true;renderCurrent()};
@@ -1841,14 +2001,194 @@ function renderCurrent(){
   trBox.innerHTML=ls.map((l,i)=>`<div class="${i?'sub-x':''}">${ls.length>1?`<span class="lt">${esc(l)}</span>`:''}${esc(trOf(c,l)||t('Translating')+'…')}</div>`).join('');
 }
 $('#subEnNow').addEventListener('click',e=>{const w=e.target.closest('.w');if(!w||$('#subEnNow').classList.contains('blur'))return;e.stopPropagation();openPop(w,w.dataset.w,cues[cur]?.en)});
-function renderCueList(){
+function renderCueList(){setTimeout(renderKw,0);
   const showTr=isVip()&&lang!=='off';
   $('#cueList').innerHTML=cues.map((c,i)=>`<button class="cue${i===cur?' cur':''}" data-i="${i}"><time>${fmtT(c.start)}</time><span style="min-width:0"><span class="${mode==='dict'?'blur':''}">${esc(c.en)}</span>${showTr&&trOf(c)?`<div class="tr">${esc(trOf(c))}</div>`:''}</span></button>`).join('')||'<p class="muted small">No transcript yet.</p>';
 }
 $('#cueList').onclick=e=>{const b=e.target.closest('.cue');if(b)playCue(+b.dataset.i)};
+
+/* ---------- key words: words and phrases found in the lesson transcript ---------- */
+const STOP=new Set(`a an the and or but if so than then that this these those there here is am are was were be been being have has had having do does did doing done
+i you he she it we they me him her us them my your his its our their mine yours ours theirs myself yourself itself ourselves themselves
+to of in on at by for with from up down out over under into onto about as off again further once just also too very really quite more most much many
+some any no not nor only own same such both each few other all every can could will would shall should may might must
+what which who whom whose when where why how yes yeah okay ok oh um uh hi hello hey bye thanks thank please
+one two three four five six seven eight nine ten first second next last get got go goes went going come came say said says tell told make made know think
+like just well now let lets right good great thing things lot lots way want see look also even still back new day today time year people`.split(/\s+/));
+const PHRASES_RAW=`give up|bỏ cuộc, từ bỏ
+look forward to|mong chờ
+figure out|tìm ra, hiểu ra
+find out|phát hiện, tìm hiểu
+pick up|nhặt lên; học được
+come up with|nghĩ ra
+look for|tìm kiếm
+look after|chăm sóc
+look up|tra cứu
+run out of|hết, cạn
+get up|thức dậy
+wake up|thức dậy
+get along with|hòa hợp với
+get over|vượt qua
+get rid of|loại bỏ
+put off|trì hoãn
+put on|mặc vào
+take off|cởi ra; cất cánh
+turn on|bật
+turn off|tắt
+turn down|từ chối; vặn nhỏ
+set up|thiết lập
+break down|hỏng; suy sụp
+carry on|tiếp tục
+go on|tiếp tục; diễn ra
+come back|quay lại
+go back|quay về
+keep up with|theo kịp
+catch up|bắt kịp
+check out|xem thử; trả phòng
+point out|chỉ ra
+work out|tập thể dục; giải quyết
+show up|xuất hiện, có mặt
+end up|rốt cuộc, cuối cùng thì
+write down|ghi lại
+fill in|điền vào
+calm down|bình tĩnh lại
+slow down|chậm lại
+grow up|lớn lên
+hang out|đi chơi
+come across|tình cờ gặp
+run into|tình cờ gặp
+bring up|nêu ra; nuôi nấng
+make sure|đảm bảo
+make sense|hợp lý, dễ hiểu
+take care of|chăm sóc, lo liệu
+pay attention to|chú ý đến
+take part in|tham gia
+deal with|giải quyết, đối phó
+depend on|phụ thuộc vào
+rely on|dựa vào
+focus on|tập trung vào
+worry about|lo lắng về
+care about|quan tâm đến
+belong to|thuộc về
+be able to|có thể
+used to|đã từng
+be used to|quen với
+in order to|để
+as well as|cũng như
+such as|chẳng hạn như
+a lot of|nhiều
+a little bit|một chút
+at least|ít nhất
+at first|lúc đầu
+at the moment|hiện tại
+in fact|thực tế là
+of course|tất nhiên
+by the way|nhân tiện
+on the other hand|mặt khác
+in other words|nói cách khác
+for example|ví dụ
+for instance|chẳng hạn
+as soon as|ngay khi
+even though|mặc dù
+instead of|thay vì
+because of|bởi vì
+according to|theo như
+in front of|phía trước
+next to|bên cạnh
+all the time|lúc nào cũng
+from time to time|thỉnh thoảng
+step by step|từng bước một
+out loud|thành tiếng, to
+right now|ngay bây giờ
+these days|dạo này
+kind of|hơi, kiểu như
+sort of|phần nào, kiểu như
+go for a walk|đi dạo
+take a break|nghỉ giải lao
+make a mistake|mắc lỗi
+make progress|tiến bộ
+have fun|vui vẻ
+spend time|dành thời gian
+waste time|lãng phí thời gian
+in the end|cuối cùng
+at the end of|vào cuối
+get ready|chuẩn bị sẵn sàng
+ready for|sẵn sàng cho
+feel like|cảm thấy muốn
+look like|trông giống
+sound like|nghe có vẻ
+lead to|dẫn đến
+take a look|xem qua
+come true|trở thành sự thật
+on time|đúng giờ
+in time|kịp lúc
+at all|chút nào
+no longer|không còn nữa`;
+const PHRASES=PHRASES_RAW.trim().split('\n').map(l=>{const [w,v]=l.split('|');return {w,p:'phr',m:{vi:v}}});
+const IRREG={give:['gave','given'],take:['took','taken'],get:['got','gotten'],go:['went','gone','goes'],come:['came'],make:['made'],find:['found'],run:['ran'],break:['broke','broken'],bring:['brought'],keep:['kept'],catch:['caught'],pay:['paid'],deal:['dealt'],spend:['spent'],lead:['led'],feel:['felt'],hang:['hung'],grow:['grew','grown'],write:['wrote','written'],wake:['woke','woken'],be:['am','is','are','was','were','been','being',"i'm","you're","we're","they're","it's","he's","she's"],have:['has','had','having']};
+function verbForms(v){const f=new Set([v,v+'s',v+'es',v+'ed',v+'d',v+'ing',v.replace(/e$/,'')+'ing',v.replace(/y$/,'ies'),v.replace(/y$/,'ied')]);
+  if(/[^aeiou][aeiou][bdgmnprt]$/.test(v)){f.add(v+v.slice(-1)+'ing');f.add(v+v.slice(-1)+'ed')}(IRREG[v]||[]).forEach(x=>f.add(x));return [...f]}
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const PARTICLES=['up','out','off','on','down','back','over','in','away','around','across','into'];
+function phraseRe(ph){const w=ph.toLowerCase().split(/\s+/);const head=`(?:${verbForms(w[0]).map(reEsc).join('|')})`;
+  const gap=w.length===2&&PARTICLES.includes(w[1])?"(?:\\s+[a-z']+)?":'';
+  return new RegExp(`\\b${head}${gap}${w.slice(1).map(x=>'\\s+'+reEsc(x)).join('')}\\b`,'gi')}
+const LV_RANK={A1:1,A2:2,B1:3,B2:4,C1:5};
+const PAST2BASE=Object.fromEntries(Object.entries(IRREG).flatMap(([v,fs])=>fs.filter(f=>!f.includes("'")).map(f=>[f,v])));
+function baseForm(w){if(PAST2BASE[w])return PAST2BASE[w];if(w.length>4&&/ies$/.test(w))return w.slice(0,-3)+'y';if(w.length>4&&/(ss|sh|ch|x|z)es$/.test(w))return w.slice(0,-2);
+  if(w.length>3&&/s$/.test(w)&&!/(ss|us|is|ous)$/.test(w))return w.slice(0,-1);return w}
+let kwCues=null,kwItems=[],kwFilter='all',kwRun=0;
+function buildKw(){const text=cues.map(c=>c.en).join(' \n ').replace(/[’‘]/g,"'");const items=[];
+  // phrases: built-in list + any multi-word entry in the word library
+  const phraseSrc=[...PHRASES,...VOCAB.filter(x=>/\s/.test(x.w))];const seenP=new Set(),hitRes=[];
+  phraseSrc.forEach(e=>{const k=e.w.toLowerCase();if(seenP.has(k))return;seenP.add(k);const re=phraseRe(e.w);const m=text.match(re);if(!m)return;
+    hitRes.push(re);const first=cues.findIndex(c=>phraseRe(e.w).test(c.en.replace(/[’‘]/g,"'")));items.push({key:k,text:e.w,type:'phrase',entry:VMAP.get(k)||e,count:m.length,first,rank:6})});
+  // single words
+  const counts=new Map(),proper=new Map();
+  cues.forEach((c,ci)=>{let line=c.en.replace(/[’‘]/g,"'");hitRes.forEach(re=>{line=line.replace(re,' ')});line.split(/\s+/).filter(Boolean).forEach((tok,ti)=>{const raw=tok.replace(/^[^A-Za-z]+|[^A-Za-z']+$/g,'');const low=raw.toLowerCase();
+    if(low.length<3||low.includes("'")||STOP.has(low)||/\d/.test(low))return;const base=localLookup(low);const key=base?base.w.toLowerCase():baseForm(low);
+    if(ti>0&&/^[A-Z]/.test(raw)&&!base)proper.set(key,(proper.get(key)||0)+1);const o=counts.get(key)||{key,text:base?base.w:key,entry:base,count:0,first:ci};o.count++;counts.set(key,o)})});
+  const myRank=LV_RANK[prefs.level]||2;
+  counts.forEach(o=>{if(proper.get(o.key)===o.count||STOP.has(o.key))return;const lv=o.entry&&o.entry.l;const r=lv?LV_RANK[lv]||3:(o.key.length>=7?4:o.key.length>=5?3:2);
+    if(r<myRank-1&&r<3)return;items.push({...o,type:'word',rank:r})});
+  items.sort((a,b)=>(a.type!==b.type?(a.type==='phrase'?-1:1):0)||b.rank-a.rank||b.count-a.count||a.text.localeCompare(b.text));
+  return items}
+function kwVisible(){return kwItems.filter(x=>kwFilter==='all'||x.type===kwFilter)}
+function renderKw(){if(!$('#p-kw')||$('#p-kw').hidden){if(kwCues!==cues){kwCues=null}return}
+  if(kwCues!==cues){kwCues=cues;kwItems=cues.length?buildKw():[]}
+  const ml=meaningLang(),saved=new Set(notes.map(n=>n.w.toLowerCase())),vis=kwVisible(),limit=isVip()?vis.length:Math.min(vis.length,8);
+  const nW=kwItems.filter(x=>x.type==='word').length,nP=kwItems.length-nW;
+  $('#kwInfo').textContent=cues.length?t('{0} words · {1} phrases · tap a word to hear it in the lesson',nW,nP):t('Load a lesson to see its key words.');
+  $('#kwSaveAll').hidden=!vis.length;
+  $('#kwList').innerHTML=vis.slice(0,limit).map((x,i)=>{const m=ml==='off'?'':(meaningOf(x.entry,ml)||(x.mean&&x.mean[ml])||'');const pos=x.type==='phrase'?t('phrase'):(POS[(x.entry&&x.entry.p)||'']||x.pos||'');
+    return `<div class="kw ${x.type}${saved.has(x.text.toLowerCase())?' saved':''}" data-i="${kwItems.indexOf(x)}"><div class="top"><button class="kwt" data-act="jump" data-noi18n>${esc(x.text)}</button><span class="ipa" data-noi18n>${esc(x.ipa||'')}</span>${pos?`<span class="chip">${esc(pos)}</span>`:''}${x.entry&&x.entry.l?`<span class="chip ${x.entry.l}">${x.entry.l}</span>`:''}${x.count>1?`<span class="cnt">×${x.count}</span>`:''}</div>
+      ${ml==='off'?'':`<div class="mean" data-noi18n>${m?esc(m):'<span class="muted">…</span>'}</div>`}<div class="acts">${cambLink(x.text)}<button class="btn icon ghost" data-act="say" aria-label="${esc(t('Listen'))}">🔊</button><button class="btn icon ghost" data-act="save" aria-label="${esc(t('Save'))}">${saved.has(x.text.toLowerCase())?'✅':'⭐'}</button></div></div>`}).join('')
+    +(limit<vis.length?`<button class="kwlock" id="kwUnlock">🔒 ${esc(t('{0} more · Unlock the full list with VIP',vis.length-limit))}</button>`:'')
+    +(!vis.length&&cues.length?`<p class="muted small">${esc(t('No words match.'))}</p>`:'');
+  const u=$('#kwUnlock');if(u)u.onclick=()=>openPaywall('The full word list');
+  fillKw(vis.slice(0,limit),ml)}
+async function fillKw(list,ml){const run=++kwRun;const jobs=list.filter(x=>!x.ipaDone||(ml!=='off'&&!meaningOf(x.entry,ml)&&!(x.mean&&x.mean[ml])));
+  const paint=x=>{if(run!==kwRun)return;const el=$(`#kwList .kw[data-i="${kwItems.indexOf(x)}"]`);if(!el)return;el.querySelector('.ipa').textContent=x.ipa||'';
+    const mEl=el.querySelector('.mean');if(mEl){const m=meaningOf(x.entry,ml)||(x.mean&&x.mean[ml])||'';if(m)mEl.textContent=m}
+    if(x.pos&&!el.querySelector('.chip')){const c=document.createElement('span');c.className='chip';c.textContent=x.pos;el.querySelector('.top').insertBefore(c,el.querySelector('.cnt'))}};
+  const work=async()=>{while(jobs.length&&run===kwRun){const x=jobs.shift();
+    if(!x.ipaDone){x.ipaDone=true;if(x.type==='word'){const r=await lookup(x.text.toLowerCase());x.ipa=r.ipa||'';if(!x.entry&&r.defs[0])x.pos=r.defs[0].pos}}
+    if(ml!=='off'&&!meaningOf(x.entry,ml)&&!(x.mean&&x.mean[ml])){const tr=await machineTr(x.text,ml);x.mean=x.mean||{};x.mean[ml]=tr||'—'}
+    paint(x)}};
+  await Promise.all([work(),work(),work()])}
+$('#kwSeg').onclick=e=>{const b=e.target.closest('[data-f]');if(!b)return;kwFilter=b.dataset.f;$$('#kwSeg button').forEach(x=>x.classList.toggle('on',x===b));renderKw()};
+function kwNote(x){const ml=meaningLang();const ex=x.first>=0&&cues[x.first]?cues[x.first].en:'';return {w:x.text,tr:meaningOf(x.entry,ml)||(x.mean&&x.mean[ml])||'',ipa:x.ipa||'',pos:x.type==='phrase'?'phrase':(POS[(x.entry&&x.entry.p)||'']||x.pos||''),ex}}
+$('#kwList').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;const x=kwItems[+b.closest('.kw').dataset.i];if(!x)return;
+  if(b.dataset.act==='jump'&&x.first>=0)playCue(x.first);
+  if(b.dataset.act==='say')speak(x.text,.9);
+  if(b.dataset.act==='save'){addNote(kwNote(x));renderKw();renderCurrent()}};
+$('#kwSaveAll').onclick=()=>{const saved=new Set(notes.map(n=>n.w.toLowerCase()));const vis=kwVisible().slice(0,isVip()?undefined:8).filter(x=>!saved.has(x.text.toLowerCase()));let n=0;
+  for(const x of vis){const before=notes.length;addNote(kwNote(x));if(notes.length===before)break;n++}renderKw();renderCurrent();if(n)toast(t('Saved {0} words to your notebook',n)+' ⭐')};
+
 function setMode(m){if(m!=='watch'&&needVip(m==='dict'?'Dictation practice':'Shadowing practice'))m='watch';mode=m;$$('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));$('#dictBox').hidden=m!=='dict';$('#shadowBox').hidden=m!=='shadow';renderCueList();renderCurrent()}
 $$('#modeSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
-$$('#sideSeg button').forEach(b=>b.onclick=()=>{$$('#sideSeg button').forEach(x=>x.classList.toggle('on',x===b));$('#p-subs').hidden=b.dataset.p!=='subs';$('#p-note').hidden=b.dataset.p!=='note'});
+function showSide(k){$$('#sideSeg button').forEach(x=>x.classList.toggle('on',x.dataset.p===k));['subs','note','kw'].forEach(x=>$('#p-'+x).hidden=x!==k);if(k==='kw')renderKw()}
+$('#sideSeg').onclick=e=>{const b=e.target.closest('[data-p]');if(b)showSide(b.dataset.p)};
 $('#play').onclick=togglePlay;
 $('#prev').onclick=()=>playCue(cur-1);$('#next').onclick=()=>playCue(cur+1);$('#replay').onclick=()=>playCue(Math.max(cur,0));
 $('#speed').onchange=e=>{speed=+e.target.value;if(src==='yt'&&ytReady)yt.setPlaybackRate(speed);VID().playbackRate=AUD().playbackRate=speed};
@@ -1899,6 +2239,11 @@ $('#recBtn').onclick=async()=>{
   }catch(e){toast('Microphone unavailable. Allow microphone access for this site.')}
 };
 
+/* bookmarklet that copies the full YouTube transcript */
+const BMK_CODE=`(()=>{const segs=[...document.querySelectorAll('ytd-transcript-segment-renderer,transcript-segment-view-model')];let out=segs.map(e=>{const ts=(e.querySelector('.segment-timestamp,[class*=timestamp]')||{}).innerText||'';const tx=(e.querySelector('.segment-text,[class*=segment-text],span[role=text]')||{}).innerText||'';return ts.trim()&&tx.trim()?ts.trim()+' '+tx.replace(/\\s+/g,' ').trim():''}).filter(Boolean);if(!out.length){alert('Open the transcript first: …More → Show transcript');return}const txt=out.join('\\n');const done=()=>alert('Copied '+out.length+' lines. Paste them into Mochi English.');const fb=()=>{const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();done()};navigator.clipboard?navigator.clipboard.writeText(txt).then(done,fb):fb()})()`;
+$('#bmk').href='javascript:'+encodeURIComponent(BMK_CODE);
+$('#bmk').addEventListener('click',e=>{e.preventDefault();toast(t('Drag this button to your bookmarks bar, then use it on YouTube.'))});
+
 /* study your own video (VIP) */
 $('#ytBar').addEventListener('submit',e=>{e.preventDefault();const u=$('#ytQuick').value.trim(),id=ytId(u);
   if(!id)return toast(t("That doesn't look like a YouTube link"));if(needVip('Studying your own videos'))return;
@@ -1915,41 +2260,45 @@ $('#loadLesson').onclick=async()=>{
   if(!id&&!vf)return toast('Paste a YouTube link or choose a video file');
   if(vf){const v=VID();try{URL.revokeObjectURL(v.src)}catch(e){}v.src=URL.createObjectURL(vf);v.playbackRate=speed;showSrc('vid');ytCurId=id}else loadYT(id);
   if(!c.length)toast('No subtitles found. The video plays without the subtitle box.');
-  curEp=null;cues=c;cur=-1;$('#epTitle').textContent='My lesson';$('#epMeta').textContent='📥 Your own video';updYtLink();renderCueList();renderCurrent();$('#setup').open=false;
+  curEp=null;cues=c;cur=-1;$('#epTitle').textContent='My lesson';$('#epMeta').textContent='📥 Your own video';updYtLink();renderCueList();renderCurrent();$('#setup').open=false;if(c.length)showSide('kw');
 };
 
 /* ---------- grammar ---------- */
-let learned=new Set(load('gram',[])),gGroup='All';
-const groups=['All',...new Set(GRAMMAR.map(x=>x.g))];
-$('#gSeg').innerHTML=groups.map(g=>`<button data-g="${g}" class="${g===gGroup?'on':''}">${g}</button>`).join('');
-$$('#gSeg button').forEach(b=>b.onclick=()=>{gGroup=b.dataset.g;$$('#gSeg button').forEach(x=>x.classList.toggle('on',x===b));renderGram()});
+BASE_GRAMMAR.forEach((g,i)=>{g.id=g.id||'g'+i});
+let GRAM=BASE_GRAMMAR.slice();
+const normGram=a=>(a||[]).map(x=>typeof x==='number'?'g'+x:x);
+let learned=new Set(normGram(load('gram',[]))),gGroup='All';
+function renderGSeg(){const groups=['All',...new Set(GRAM.map(x=>x.g))];if(!groups.includes(gGroup))gGroup='All';
+  $('#gSeg').innerHTML=groups.map(g=>`<button data-g="${esc(g)}" class="${g===gGroup?'on':''}">${esc(g)}</button>`).join('')}
+renderGSeg();
+$('#gSeg').onclick=e=>{const b=e.target.closest('[data-g]');if(!b)return;gGroup=b.dataset.g;$$('#gSeg button').forEach(x=>x.classList.toggle('on',x===b));renderGram()};
 function renderGram(){const q=$('#gSearch').value.toLowerCase();const vip=isVip();
-  $('#gramList').innerHTML=GRAMMAR.map((x,k)=>({...x,k})).filter(x=>(gGroup==='All'||x.g===gGroup)&&(!q||(x.t+x.u+x.f).toLowerCase().includes(q))).map(x=>{
-    const locked=!vip&&x.k>=CONFIG.freeGrammarTopics;
-    const head=`<div class="row" style="flex-wrap:nowrap"><span class="gi">${x.i}</span><div style="min-width:0"><span class="chip">${x.g}</span> ${locked?'<span class="chip vip">🔒 VIP</span>':''}<h3>${esc(x.t)}</h3></div></div>`;
+  $('#gramList').innerHTML=GRAM.map((x,k)=>({...x,k})).filter(x=>(gGroup==='All'||x.g===gGroup)&&(!q||(x.t+x.u+x.f).toLowerCase().includes(q))).map(x=>{
+    const locked=!vip&&!(x.free!=null?x.free:x.k<CONFIG.freeGrammarTopics);
+    const head=`<div class="row" style="flex-wrap:nowrap"><span class="gi">${esc(x.i||'📘')}</span><div style="min-width:0"><span class="chip">${esc(x.g)}</span> ${locked?'<span class="chip vip">🔒 VIP</span>':''}<h3>${esc(x.t)}</h3></div></div>`;
     if(locked)return `<article class="gcard lockd" data-lock="1">${head}<p class="muted small" style="margin:0">Unlock this topic with VIP.</p></article>`;
-    return `<article class="gcard ${learned.has(x.k)?'learned':''}">${head}<div class="formula">${esc(x.f)}</div><div class="small">${esc(x.u)}</div>
-    ${x.ex.map(e=>`<div class="ex"><button class="del" data-say="${esc(e[0])}" aria-label="Listen">🔊</button><div>${esc(e[0])}${lang==='vi'?`<i>${esc(e[1])}</i>`:''}</div></div>`).join('')}
-    <label class="row small" style="cursor:pointer"><input type="checkbox" class="check" data-k="${x.k}" ${learned.has(x.k)?'checked':''}> Mark as learned</label></article>`}).join('')||'<p class="muted">No topics found.</p>';
-  $('#gramProg').textContent=t('{0} / {1} learned',learned.size,GRAMMAR.length)}
+    return `<article class="gcard ${learned.has(x.id)?'learned':''}">${head}<div class="formula">${esc(x.f)}</div><div class="small">${esc(x.u)}</div>
+    ${(x.ex||[]).map(e=>`<div class="ex"><button class="del" data-say="${esc(e[0])}" aria-label="Listen">🔊</button><div>${esc(e[0])}${e[1]&&(lang==='vi'||x.exLang===lang)?`<i>${esc(e[1])}</i>`:''}</div></div>`).join('')}
+    <label class="row small" style="cursor:pointer"><input type="checkbox" class="check" data-k="${esc(x.id)}" ${learned.has(x.id)?'checked':''}> Mark as learned</label></article>`}).join('')||'<p class="muted">No topics found.</p>';
+  $('#gramProg').textContent=t('{0} / {1} learned',GRAM.filter(g=>learned.has(g.id)).length,GRAM.length)}
 $('#gramList').addEventListener('click',e=>{if(e.target.dataset.say)speak(e.target.dataset.say,.95);if(e.target.closest('[data-lock]'))openPaywall('This grammar topic')});
-$('#gramList').addEventListener('change',e=>{const k=+e.target.dataset.k;e.target.checked?learned.add(k):learned.delete(k);save('gram',[...learned]);markDay();renderGram()});
+$('#gramList').addEventListener('change',e=>{const k=e.target.dataset.k;if(!k)return;e.target.checked?learned.add(k):learned.delete(k);save('gram',[...learned]);markDay();renderGram()});
 $('#gSearch').oninput=renderGram;
 
 /* ---------- vocabulary ---------- */
 let vLv='All',vShown=48;
-$('#lvSeg').innerHTML=['All','A1','A2','B1','B2'].map(l=>`<button data-v="${l}" class="${l===vLv?'on':''}">${l}</button>`).join('');
+$('#lvSeg').innerHTML=['All','A1','A2','B1','B2','C1'].map(l=>`<button data-v="${l}" class="${l===vLv?'on':''}">${l}</button>`).join('');
 $$('#lvSeg button').forEach(b=>b.onclick=()=>{vLv=b.dataset.v;vShown=48;$$('#lvSeg button').forEach(x=>x.classList.toggle('on',x===b));renderVocab()});
-function vFiltered(){const q=$('#vSearch').value.toLowerCase();return VOCAB.filter(x=>(vLv==='All'||x.l===vLv)&&(!q||x.w.toLowerCase().includes(q)||(lang==='vi'&&x.v.toLowerCase().includes(q))))}
+function vFiltered(){const q=$('#vSearch').value.toLowerCase();return VOCAB.filter(x=>(vLv==='All'||x.l===vLv)&&(!q||x.w.toLowerCase().includes(q)||Object.values(x.m||{}).some(v=>String(v).toLowerCase().includes(q))))}
 function renderVocab(){const list=vFiltered();const saved=new Set(notes.map(n=>n.w.toLowerCase()));
   $('#vCount').textContent=t('{0} words in the library. Tap 🔊 to listen, 🔎 to look up, ⭐ to save.',VOCAB.length);
   const ml=meaningLang();
-  $('#vGrid').innerHTML=list.slice(0,vShown).map(x=>{const m=ml==='off'?'':ml==='vi'?x.v:(mt[ml+'|'+x.w]||'');
-    return `<div class="vcard"><div class="vw"><button class="vword" data-look="${esc(x.w)}">${esc(x.w)}</button> <span class="chip ${x.l||''}">${esc(x.l||'')}</span></div><div class="muted small">${esc(POS[x.p]||x.p)}</div>${ml==='off'?'':`<div class="vmean" data-mw="${esc(x.w)}" data-noi18n>${m?esc(m):'<span class="muted">…</span>'}</div>`}<div class="row"><button class="btn icon ghost" data-say="${esc(x.w)}" aria-label="Listen">🔊</button><button class="btn icon ghost" data-look="${esc(x.w)}" aria-label="Look up">🔎</button><button class="btn icon ghost" data-add="${esc(x.w)}" aria-label="Save">${saved.has(x.w.toLowerCase())?'✅':'⭐'}</button></div></div>`}).join('')||'<p class="muted">No words match.</p>';
+  $('#vGrid').innerHTML=list.slice(0,vShown).map(x=>{const m=ml==='off'?'':(meaningOf(x,ml)||mt[ml+'|'+x.w]||'');
+    return `<div class="vcard"><div class="vw"><button class="vword" data-look="${esc(x.w)}">${esc(x.w)}</button> <span class="chip ${x.l||''}">${esc(x.l||'')}</span></div><div class="muted small">${esc(POS[x.p]||x.p)}</div>${ml==='off'?'':`<div class="vmean" data-mw="${esc(x.w)}"${m?'':' data-need="1"'} data-noi18n>${m?esc(m):'<span class="muted">…</span>'}</div>`}<div class="row"><button class="btn icon ghost" data-say="${esc(x.w)}" aria-label="Listen">🔊</button><button class="btn icon ghost" data-look="${esc(x.w)}" aria-label="Look up">🔎</button>${cambLink(x.w)}<button class="btn icon ghost" data-add="${esc(x.w)}" aria-label="Save">${saved.has(x.w.toLowerCase())?'✅':'⭐'}</button></div></div>`}).join('')||'<p class="muted">No words match.</p>';
   fillMeanings(ml);
   $('#vMore').hidden=list.length<=vShown}
 let fillRun=0;
-async function fillMeanings(ml){if(ml==='off'||ml==='vi')return;const run=++fillRun;const els=[...$('#vGrid').querySelectorAll('[data-mw]')].filter(el=>!mt[ml+'|'+el.dataset.mw]);
+async function fillMeanings(ml){if(ml==='off')return;const run=++fillRun;const els=[...$('#vGrid').querySelectorAll('[data-need]')];
   const work=async()=>{while(els.length&&run===fillRun){const el=els.shift();const tr=await machineTr(el.dataset.mw,ml);if(run===fillRun&&el.isConnected)el.textContent=tr||'—'}};
   await Promise.all([work(),work(),work(),work()])}
 $('#vGrid').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
@@ -1974,17 +2323,18 @@ $('#fAdd').onclick=()=>{const c=deck[fi];if(c)addNote({w:c.w,tr:$('#fTr').textCo
 $('#fSrc').onchange=newDeck;$('#fLv').onchange=newDeck;
 
 /* ---------- tests ---------- */
-function renderTests(){const best=load('best',{});$('#tList').innerHTML=TESTS.map(x=>`<button class="tile" data-t="${x.id}"><span class="em" style="background:var(--sun-soft)">${x.icon}</span><h3>${esc(x.title)} ${x.vip&&!isVip()?'<span class="chip vip">🔒 VIP</span>':''}</h3><span class="muted small">${esc(x.desc)}</span>${best[x.id]!=null?`<span class="chip B1">🏅 ${t('Best')}: ${best[x.id]}/${x.qs.length}</span>`:''}</button>`).join('')}
+let TESTLIST=BASE_TESTS.slice();
+function renderTests(){const best=load('best',{});$('#tList').innerHTML=TESTLIST.map(x=>`<button class="tile" data-t="${x.id}"><span class="em" style="background:var(--sun-soft)">${esc(x.icon||'📝')}</span><h3>${esc(x.title)} ${x.vip&&!isVip()?'<span class="chip vip">🔒 VIP</span>':''}</h3><span class="muted small">${esc(x.desc||t('{0} questions',x.qs.length))}</span>${best[x.id]!=null?`<span class="chip B1">🏅 ${t('Best')}: ${best[x.id]}/${x.qs.length}</span>`:''}</button>`).join('')}
 $('#tList').onclick=e=>{const b=e.target.closest('[data-t]');if(b)startTest(b.dataset.t)};
 let T=null,ans=[],tLeft=0,tInt=null,done=false;
-function startTest(id){T=TESTS.find(t=>t.id===id);if(T.vip&&needVip('This practice test'))return;ans=new Array(T.qs.length).fill(-1);done=false;$('#tHome').hidden=true;$('#tRun').hidden=false;$('#tTitle').textContent=T.title;$('#tScore').textContent='';$('#tSubmit').hidden=false;
-  $('#runner').classList.toggle('nopass',!T.passage);$('#tPassage').hidden=!T.passage;$('#tPassage').textContent=T.passage||'';renderQs();tLeft=T.time;clearInterval(tInt);tick2();tInt=setInterval(tick2,1000);window.scrollTo(0,0)}
+function startTest(id){T=TESTLIST.find(x=>x.id===id)||cloudTests.find(x=>x.id===id);if(!T)return;if(T.vip&&needVip('This practice test'))return;ans=new Array(T.qs.length).fill(-1);done=false;$('#tHome').hidden=true;$('#tRun').hidden=false;$('#tTitle').textContent=T.title;$('#tScore').textContent='';$('#tSubmit').hidden=false;
+  $('#runner').classList.toggle('nopass',!T.passage);$('#tPassage').hidden=!T.passage;$('#tPassage').textContent=T.passage||'';const ta=$('#tAudio');ta.hidden=!T.audio;if(T.audio)ta.src=T.audio;else ta.removeAttribute('src');renderQs();tLeft=T.time||T.qs.length*60;clearInterval(tInt);tick2();tInt=setInterval(tick2,1000);window.scrollTo(0,0)}
 function tick2(){if(done)return;$('#tTimer').textContent=`⏱ ${String(Math.floor(tLeft/60)).padStart(2,'0')}:${String(tLeft%60).padStart(2,'0')}`;if(tLeft--<=0){toast("Time's up! ⏰");submitTest()}}
 function renderQs(){$('#tQs').innerHTML=T.qs.map((q,i)=>`<div class="q"><b>${i+1}. ${esc(q.q)}</b><div class="opts">${q.o.map((o,k)=>{let c='';if(done){if(k===q.a)c='right';else if(ans[i]===k)c='wrong'}else if(ans[i]===k)c='sel';return`<button class="opt ${c}" data-q="${i}" data-k="${k}" ${done?'disabled':''}>${T.passage?'':'('+String.fromCharCode(65+k)+') '}${esc(o)}</button>`}).join('')}</div>${done&&q.e?`<div class="exp">💡 ${esc(q.e)}</div>`:''}</div>`).join('')}
 $('#tQs').onclick=e=>{const b=e.target.closest('.opt');if(!b||done)return;ans[+b.dataset.q]=+b.dataset.k;renderQs()};
 function submitTest(){done=true;clearInterval(tInt);const sc=T.qs.filter((q,i)=>ans[i]===q.a).length;const best=load('best',{});best[T.id]=Math.max(best[T.id]??0,sc);save('best',best);markDay();$('#tScore').textContent=`🎯 ${t('{0}/{1} correct',sc,T.qs.length)} ${sc===T.qs.length?'🎉':''}`;$('#tSubmit').hidden=true;renderQs()}
 $('#tSubmit').onclick=submitTest;
-$('#tBack').onclick=()=>{clearInterval(tInt);$('#tRun').hidden=true;$('#tHome').hidden=false;renderTests()};
+$('#tBack').onclick=()=>{clearInterval(tInt);$('#tAudio').pause();$('#tRun').hidden=true;$('#tHome').hidden=false;renderTests()};
 
 /* ---------- account & settings ---------- */
 const AVATARS=['🎧','📚','🌍','☕','🎸','🚀','🌿','⚡','🎯','🧭','🌙','🎨'];
@@ -2081,7 +2431,7 @@ async function pullCloud(){
     notes=mergeBy([...(d.notes||[]),...notes],n=>(n.w||n.id||'').toLowerCase()||n.id);
     quotes=mergeBy([...(d.quotes||[]),...quotes],q=>q.en);
     days=[...new Set([...(d.days||[]),...days])].sort();
-    doneEps=new Set([...(d.doneEps||[]),...doneEps]);learned=new Set([...(d.gram||[]),...learned]);
+    doneEps=new Set([...(d.doneEps||[]),...doneEps]);learned=new Set([...normGram(d.gram),...learned]);
     const best=load('best',{});Object.entries(d.best||{}).forEach(([k,v])=>best[k]=Math.max(best[k]??0,v));
     if(d.prefs)prefs=Object.assign(prefs,d.prefs);if(!prefs.name&&user.name)prefs.name=user.name;if(d.lang)lang=d.lang;
     save('notes',notes);save('quotes',quotes);save('days',days);save('doneEps',[...doneEps]);save('gram',[...learned]);save('best',best);savePrefs();save('lang',lang);
@@ -2100,21 +2450,40 @@ function renderAuthBox(){const box=$('#authBox');if(!box)return;
 
 /* ---------- admin: episodes managed by the site owner ---------- */
 const BASE_EPISODES=EPISODES.slice();
-let cloudEps=[],hiddenBuiltins=[],admEdit=null,admCues=[],admTr={},admLangs=['vi','zh','ja','ko','es'],admTrCur='vi',admDel=null;
+let cloudEps=[],cloudVocab=[],cloudGrammar=[],cloudTests=[],siteSet={hiddenBuiltins:[],hiddenTests:[],hiddenGrammar:[],hideBaseVocab:false},admTab='episodes',admEdit=null,admCues=[],admTr={},admLangs=['vi','zh','ja','ko','es'],admTrCur='vi',admDel=null;
 function isOwner(){if(!user)return false;if(user.demo)return true;return !!user.verified&&(CONFIG.owners||[]).map(s=>s.toLowerCase()).includes((user.email||'').toLowerCase())}
+/* storage: Firestore when connected, this browser in demo mode */
+async function cloudAll(col){if(fbOn()){const s=await fb.db.collection(col).get();return s.docs.map(d=>({...d.data(),id:d.id}))}return Object.entries(load('demo_'+col,{})).map(([id,v])=>({...v,id}))}
+async function cloudSet(col,id,data,merge){if(fbOn())return fb.db.collection(col).doc(id).set(data,merge?{merge:true}:{});const all=load('demo_'+col,{});all[id]=merge?{...(all[id]||{}),...data}:data;save('demo_'+col,all)}
+async function cloudDel(col,id){if(fbOn())return fb.db.collection(col).doc(id).delete();const all=load('demo_'+col,{});delete all[id];save('demo_'+col,all)}
 async function loadCloudEpisodes(){
-  if(fbOn()){if(!fb)return;try{const s=await fb.db.collection('episodes').get();cloudEps=s.docs.map(d=>({...d.data(),id:d.id}));const st=await fb.db.collection('site').doc('settings').get();hiddenBuiltins=(st.exists&&st.data().hiddenBuiltins)||[]}catch(e){}}
-  else{cloudEps=load('adminEps',[]);hiddenBuiltins=load('hiddenBuiltins',[])}
-  rebuildEpisodes()}
+  if(fbOn()&&!fb)return;
+  try{const [eps,site,content,voc,tests]=await Promise.all([cloudAll('episodes'),cloudAll('site'),cloudAll('content'),cloudAll('vocab'),cloudAll('tests')]);
+    cloudEps=eps;const st=site.find(x=>x.id==='settings')||{};siteSet={hiddenBuiltins:st.hiddenBuiltins||[],hiddenTests:st.hiddenTests||[],hiddenGrammar:st.hiddenGrammar||[],hideBaseVocab:!!st.hideBaseVocab};
+    cloudGrammar=((content.find(x=>x.id==='grammar')||{}).topics)||[];cloudVocab=voc.flatMap(d=>d.words||[]);cloudTests=tests;
+  }catch(e){}
+  rebuildEpisodes();rebuildVocab();rebuildGrammar();rebuildTests()}
 function rebuildEpisodes(){cloudEps.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-  EPISODES=[...BASE_EPISODES.filter(e=>!hiddenBuiltins.includes(e.id)),...cloudEps.filter(e=>!e.hidden)];
+  EPISODES=[...BASE_EPISODES.filter(e=>!siteSet.hiddenBuiltins.includes(e.id)),...cloudEps.filter(e=>!e.hidden)];
   renderEpisodes();if(!$('#v-admin').hidden)renderAdmin()}
-async function storeEpisode(ep){if(fbOn()){await fb.db.collection('episodes').doc(ep.id).set(ep)}else{const all=load('adminEps',[]).filter(x=>x.id!==ep.id);all.push(ep);save('adminEps',all)}}
-async function removeEpisode(id){if(fbOn()){await fb.db.collection('episodes').doc(id).delete()}else save('adminEps',load('adminEps',[]).filter(x=>x.id!==id))}
-async function storeHiddenBuiltins(){if(fbOn())await fb.db.collection('site').doc('settings').set({hiddenBuiltins},{merge:true});else save('hiddenBuiltins',hiddenBuiltins)}
+function rebuildVocab(){const map=new Map();(siteSet.hideBaseVocab?[]:BASE_VOCAB).forEach(x=>map.set(x.w.toLowerCase(),x));cloudVocab.forEach(x=>map.set(x.w.toLowerCase(),x));
+  VOCAB=[...map.values()];VMAP=map;renderVocab()}
+function rebuildGrammar(){const over=new Map(cloudGrammar.map(g=>[g.id,g])),hid=siteSet.hiddenGrammar;
+  GRAM=[...BASE_GRAMMAR.filter(g=>!hid.includes(g.id)).map(g=>over.get(g.id)||g),...cloudGrammar.filter(g=>!BASE_GRAMMAR.some(b=>b.id===g.id)&&!hid.includes(g.id))];
+  renderGSeg();renderGram()}
+function rebuildTests(){const over=new Map(cloudTests.map(x=>[x.id,x])),hid=siteSet.hiddenTests;cloudTests.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  TESTLIST=[...BASE_TESTS.filter(x=>!hid.includes(x.id)).map(x=>over.get(x.id)||x),...cloudTests.filter(x=>!BASE_TESTS.some(b=>b.id===x.id))].filter(x=>!x.hidden||isOwner());
+  renderTests()}
+const saveSite=k=>cloudSet('site','settings',{[k]:siteSet[k]},true);
+async function storeEpisode(ep){await cloudSet('episodes',ep.id,ep)}
+async function removeEpisode(id){await cloudDel('episodes',id)}
+async function storeHiddenBuiltins(){await saveSite('hiddenBuiltins')}
 function renderAdmin(){$('#admDemo').hidden=fbOn();
+  $$('#admTabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===admTab));['episodes','vocab','grammar','tests'].forEach(k=>$('#admP-'+k).hidden=k!==admTab);
+  if(admTab==='vocab')return renderAdmVocab();if(admTab==='grammar')return renderAdmGram();if(admTab==='tests')return renderAdmTests();renderAdmEpisodes()}
+function renderAdmEpisodes(){
   const rows=[...cloudEps.slice().reverse().map(e=>({e,cloud:true})),...BASE_EPISODES.map(e=>({e,cloud:false}))];
-  $('#admList').innerHTML=rows.map(({e,cloud})=>{const off=cloud?!!e.hidden:hiddenBuiltins.includes(e.id),n=episodeCues(e).length;
+  $('#admList').innerHTML=rows.map(({e,cloud})=>{const off=cloud?!!e.hidden:siteSet.hiddenBuiltins.includes(e.id),n=episodeCues(e).length;
     const meta=[e.level,t('{0} lines',n),e.audio?'🎧':e.youtube?'📺':'🔈',e.vip?'👑 VIP':'',off?t('Hidden'):'',cloud?'':t('Built-in sample')].filter(Boolean).join(' · ');
     const btns=admDel===e.id?`<button class="btn danger-solid" data-act="del2">${esc(t('Delete'))}</button><button class="btn ghost" data-act="nodel">${esc(t('Keep'))}</button>`:
       `${cloud?`<button class="btn icon ghost" data-act="edit" title="${esc(t('Edit'))}" aria-label="${esc(t('Edit'))}">✏️</button>`:''}<button class="btn icon ghost" data-act="view" title="${esc(t('Preview'))}" aria-label="${esc(t('Preview'))}">▶</button><button class="btn icon ghost" data-act="toggle" title="${esc(off?t('Show to learners'):t('Hide from learners'))}" aria-label="${esc(off?t('Show to learners'):t('Hide from learners'))}">${off?'👁':'🙈'}</button>${cloud?`<button class="btn icon ghost" data-act="del" title="${esc(t('Delete'))}" aria-label="${esc(t('Delete'))}">🗑</button>`:''}`;
@@ -2125,7 +2494,7 @@ $('#admList').addEventListener('click',async e=>{const b=e.target.closest('[data
   try{
     if(a==='edit'){admFill(ep);$('#admForm').scrollIntoView({behavior:'smooth',block:'start'})}
     if(a==='view')openEpisode(id);
-    if(a==='toggle'){if(cloud){ep.hidden=!ep.hidden;ep.updatedAt=Date.now();await storeEpisode(ep)}else{hiddenBuiltins=hiddenBuiltins.includes(id)?hiddenBuiltins.filter(x=>x!==id):[...hiddenBuiltins,id];await storeHiddenBuiltins()}rebuildEpisodes();toast(t('Saved'))}
+    if(a==='toggle'){if(cloud){ep.hidden=!ep.hidden;ep.updatedAt=Date.now();await storeEpisode(ep)}else{siteSet.hiddenBuiltins=siteSet.hiddenBuiltins.includes(id)?siteSet.hiddenBuiltins.filter(x=>x!==id):[...siteSet.hiddenBuiltins,id];await storeHiddenBuiltins()}rebuildEpisodes();toast(t('Saved'))}
     if(a==='del'){admDel=id;renderAdmin()}
     if(a==='nodel'){admDel=null;renderAdmin()}
     if(a==='del2'){admDel=null;await removeEpisode(id);cloudEps=cloudEps.filter(x=>x.id!==id);if(admEdit&&admEdit.id===id)admFill(null);rebuildEpisodes();toast(t('Episode deleted'))}
@@ -2197,6 +2566,127 @@ $('#admForm').addEventListener('submit',async e=>{e.preventDefault();const err=m
   catch(x){err('Could not save. Check your connection and Firebase rules.')}
   $('#eSave').disabled=false});
 admFill(null);
+
+/* ---------- admin: tabs ---------- */
+$('#admTabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;admTab=b.dataset.tab;renderAdmin()};
+const slugId=(s,pre)=>(pre||'')+(s.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,36)||'item')+'-'+uid().slice(0,4);
+const findLangKey=h=>Object.keys(LANGS).find(k=>k!=='off'&&k.toLowerCase()===h.toLowerCase());
+const showErr=(id,m)=>{const el=$(id);el.textContent=t(m);el.hidden=!m};
+const adminFail=()=>toast(t('Could not save. Check your connection and Firebase rules.'));
+
+/* ---------- admin: vocabulary ---------- */
+const LEVELS=['A1','A2','B1','B2','C1'],POS_SHORT={noun:'n',verb:'v',adjective:'adj',adverb:'adv',preposition:'prep',conjunction:'conj',pronoun:'pron',phrase:'phr'};
+let vEditW=null;
+function parseVocabImport(text){const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim());if(!lines.length)return{words:[],bad:0,langs:[]};
+  const d=lines[0].includes('\t')?'\t':lines[0].includes('|')?'|':',',split=l=>l.split(d).map(s=>s.trim());
+  let head=split(lines[0]).map(s=>s.toLowerCase()),rows=lines.slice(1);
+  if(!['word','từ','từ vựng','tu'].includes(head[0])){head=['word','pos','vi','level'];rows=lines}
+  const ix=ks=>head.findIndex(x=>ks.includes(x));
+  const iw=ix(['word','từ','từ vựng','tu']),ip=ix(['pos','type','part of speech','loại từ']),il=ix(['level','cefr','cấp độ']);
+  const langCols=head.map((x,i)=>[findLangKey(x),i]).filter(([k])=>k);let bad=0;const words=[];
+  rows.forEach(l=>{const c=split(l),w=(c[iw]||'').trim();if(!w){bad++;return}let p=(c[ip]||'').toLowerCase();p=POS_SHORT[p]||p;const lv=(c[il]||'').toUpperCase(),m={};
+    langCols.forEach(([k,i])=>{if(c[i])m[k]=c[i]});words.push({w,p,l:LEVELS.includes(lv)?lv:'',m})});
+  return{words,bad,langs:langCols.map(x=>x[0])}}
+function mergeWord(nw){const k=nw.w.toLowerCase(),i=cloudVocab.findIndex(x=>x.w.toLowerCase()===k),base=i>=0?cloudVocab[i]:(VMAP.get(k)||null);
+  const merged={w:nw.w,p:nw.p||(base&&base.p)||'',l:nw.l||(base&&base.l)||'',m:{...((base&&base.m)||{}),...nw.m}};const isNew=i<0&&!VMAP.has(k);if(i>=0)cloudVocab[i]=merged;else cloudVocab.push(merged);return isNew}
+async function saveVocabCloud(){const by={};cloudVocab.forEach(x=>{const k=x.l||'other';(by[k]=by[k]||[]).push(x)});await Promise.all([...LEVELS,'other'].map(k=>cloudSet('vocab',k,{words:by[k]||[]})))}
+$('#vTpl').onclick=()=>{$('#vImp').value='word\tpos\tlevel\tvi\tzh\nabandon\tverb\tB2\tbỏ rơi, từ bỏ\t放弃\nachieve\tverb\tB1\tđạt được\t实现\nsustainable\tadjective\tB2\tbền vững\t可持续的';$('#vImp').dispatchEvent(new Event('input'))};
+$('#vImp').addEventListener('input',()=>{const r=parseVocabImport($('#vImp').value);$('#vImpInfo').textContent=r.words.length?t('{0} words found · meanings in: {1}',r.words.length,r.langs.join(', ')||'–'):''});
+$('#vImpGo').onclick=async()=>{const r=parseVocabImport($('#vImp').value);if(!r.words.length)return toast(t('No words found. Check the first row of column names.'));
+  let added=0;r.words.forEach(w=>{if(mergeWord(w))added++});
+  try{await saveVocabCloud();rebuildVocab();renderAdmVocab();$('#vImp').value='';$('#vImpInfo').textContent='';toast(t('{0} words saved ({1} new)',r.words.length,added)+' ✅')}catch(e){adminFail()}};
+$('#vHideBase').onchange=async e=>{siteSet.hideBaseVocab=e.target.checked;try{await saveSite('hideBaseVocab');rebuildVocab();renderAdmVocab()}catch(x){adminFail()}};
+function renderAdmVocab(){$('#vHideBase').checked=siteSet.hideBaseVocab;const q=$('#vAdmSearch').value.trim().toLowerCase();const cloudSet_=new Set(cloudVocab.map(x=>x.w.toLowerCase()));
+  const all=[...VOCAB].sort((a,b)=>a.w.localeCompare(b.w)),list=all.filter(x=>!q||x.w.toLowerCase().includes(q)||Object.values(x.m||{}).some(v=>String(v).toLowerCase().includes(q)));
+  $('#vAdmCount').textContent=t('{0} words',VOCAB.length);
+  $('#vAdmList').innerHTML=list.slice(0,80).map(x=>{const langs=Object.keys(x.m||{});return `<div class="admitem" data-w="${esc(x.w)}"><span class="chip ${x.l||''}">${esc(x.l||'–')}</span><div style="min-width:0"><b data-noi18n>${esc(x.w)}</b> <span class="muted small">${esc(POS[x.p]||x.p||'')}</span><div class="muted small" data-noi18n>${esc(meaningOf(x,'vi')||meaningOf(x,langs[0])||'')}${langs.length?` · ${esc(langs.join(', '))}`:''}${cloudSet_.has(x.w.toLowerCase())?'':' · '+esc(t('Built-in sample'))}</div></div><button class="btn icon ghost" data-act="edit" aria-label="${esc(t('Edit'))}">✏️</button></div>`}).join('')+(list.length>80?`<p class="muted small">${esc(t('Showing 80 of {0}. Search to find a word.',list.length))}</p>`:'')}
+$('#vAdmSearch').oninput=renderAdmVocab;
+function openVForm(x){vEditW=x?x.w:null;$('#vForm').hidden=false;$('#vW').value=x?x.w:'';$('#vP').value=x&&x.p?x.p:'n';$('#vL').value=x&&x.l?x.l:'';
+  $('#vM').value=x?Object.entries(x.m||{}).map(([k,v])=>`${k}: ${v}`).join('\n'):'';$('#vDel').hidden=!(x&&cloudVocab.some(c=>c.w.toLowerCase()===x.w.toLowerCase()));showErr('#vErr','');$('#vW').focus()}
+$('#vAdd').onclick=()=>openVForm(null);$('#vCancel').onclick=()=>{$('#vForm').hidden=true};
+$('#vAdmList').onclick=e=>{const b=e.target.closest('[data-act=edit]');if(!b)return;openVForm(VMAP.get(b.closest('[data-w]').dataset.w.toLowerCase()));$('#vForm').scrollIntoView({behavior:'smooth',block:'nearest'})};
+$('#vForm').addEventListener('submit',async e=>{e.preventDefault();const w=$('#vW').value.trim();if(!w)return showErr('#vErr','Add the word.');const m={};
+  $('#vM').value.split('\n').forEach(l=>{const mm=l.match(/^\s*([a-zA-Z-]{2,5})\s*[:：]\s*(.+)$/);if(mm){const k=findLangKey(mm[1]);if(k)m[k]=mm[2].trim()}});
+  if(vEditW&&vEditW.toLowerCase()!==w.toLowerCase())cloudVocab=cloudVocab.filter(x=>x.w.toLowerCase()!==vEditW.toLowerCase());
+  const k=w.toLowerCase(),i=cloudVocab.findIndex(x=>x.w.toLowerCase()===k),entry={w,p:$('#vP').value,l:$('#vL').value,m};if(i>=0)cloudVocab[i]=entry;else cloudVocab.push(entry);
+  try{await saveVocabCloud();rebuildVocab();$('#vForm').hidden=true;renderAdmVocab();toast(t('Saved')+' ✅')}catch(x){adminFail()}});
+$('#vDel').onclick=async()=>{if(!vEditW)return;cloudVocab=cloudVocab.filter(x=>x.w.toLowerCase()!==vEditW.toLowerCase());try{await saveVocabCloud();rebuildVocab();$('#vForm').hidden=true;renderAdmVocab();toast(t('Deleted'))}catch(x){adminFail()}};
+
+/* ---------- admin: grammar ---------- */
+let gEdit=null,gDel=null;
+$('#gEL').innerHTML=Object.entries(LANGS).filter(([k])=>k!=='off').map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('');
+function renderAdmGram(){const over=new Set(cloudGrammar.map(g=>g.id)),rows=[...BASE_GRAMMAR.map(g=>over.has(g.id)?cloudGrammar.find(c=>c.id===g.id):g),...cloudGrammar.filter(g=>!BASE_GRAMMAR.some(b=>b.id===g.id))];
+  $('#gGroups').innerHTML=[...new Set(rows.map(g=>g.g))].map(g=>`<option value="${esc(g)}">`).join('');
+  $('#gAdmList').innerHTML=rows.map(g=>{const off=siteSet.hiddenGrammar.includes(g.id),isBase=BASE_GRAMMAR.some(b=>b.id===g.id),edited=over.has(g.id);
+    const meta=[g.g,g.free===true?t('Free'):g.free===false?'👑 VIP':'',off?t('Hidden'):'',isBase?(edited?t('Edited sample'):t('Built-in sample')):''].filter(Boolean).join(' · ');
+    const btns=gDel===g.id?`<button class="btn danger-solid" type="button" data-act="del2">${esc(t(isBase?'Undo my edits':'Delete'))}</button><button class="btn ghost" type="button" data-act="nodel">${esc(t('Keep'))}</button>`:
+      `<button class="btn icon ghost" type="button" data-act="edit" aria-label="${esc(t('Edit'))}">✏️</button><button class="btn icon ghost" type="button" data-act="toggle" aria-label="${esc(off?t('Show to learners'):t('Hide from learners'))}">${off?'👁':'🙈'}</button>${edited||!isBase?`<button class="btn icon ghost" type="button" data-act="del" aria-label="${esc(t('Delete'))}">🗑</button>`:''}`;
+    return `<div class="admitem${off?' off':''}${gEdit&&gEdit.id===g.id?' editing':''}" data-id="${esc(g.id)}"><span class="admemo">${esc(g.i||'📘')}</span><div style="min-width:0"><b data-noi18n>${esc(g.t)}</b><div class="muted small">${esc(meta)}</div></div><div class="row" style="flex-wrap:nowrap">${btns}</div></div>`}).join('')}
+function gFill(g){gEdit=g||null;$('#gFormTitle').textContent=t(g?'Edit topic':'New topic');$('#gSave').textContent=t(g?'Save changes':'Publish');
+  $('#gT').value=g?g.t:'';$('#gI').value=g?g.i||'':'';$('#gG').value=g?g.g:'';$('#gF').value=g?g.f||'':'';$('#gU').value=g?g.u||'':'';
+  $('#gE').value=g?(g.ex||[]).map(e=>e[1]?`${e[0]} | ${e[1]}`:e[0]).join('\n'):'';$('#gEL').value=g&&g.exLang?g.exLang:'vi';
+  const k=g?GRAM.findIndex(x=>x.id===g.id):-1;$('#gFree').checked=g?(g.free!=null?g.free:(k>-1&&k<CONFIG.freeGrammarTopics)):false;showErr('#gErr','');renderAdmGram()}
+$('#gNew').onclick=()=>{gFill(null);$('#gT').focus()};$('#gCancel').onclick=()=>gFill(null);
+$('#gAdmList').onclick=async e=>{const b=e.target.closest('[data-act]');if(!b)return;const id=b.closest('[data-id]').dataset.id,a=b.dataset.act;
+  const g=cloudGrammar.find(x=>x.id===id)||BASE_GRAMMAR.find(x=>x.id===id);
+  try{if(a==='edit'){gFill(g);$('#gForm').scrollIntoView({behavior:'smooth',block:'start'})}
+    if(a==='toggle'){const H=siteSet.hiddenGrammar;siteSet.hiddenGrammar=H.includes(id)?H.filter(x=>x!==id):[...H,id];await saveSite('hiddenGrammar');rebuildGrammar();renderAdmGram()}
+    if(a==='del'){gDel=id;renderAdmGram()}if(a==='nodel'){gDel=null;renderAdmGram()}
+    if(a==='del2'){gDel=null;cloudGrammar=cloudGrammar.filter(x=>x.id!==id);await cloudSet('content','grammar',{topics:cloudGrammar});if(gEdit&&gEdit.id===id)gFill(null);rebuildGrammar();renderAdmGram();toast(t('Deleted'))}
+  }catch(x){adminFail()}};
+$('#gForm').addEventListener('submit',async e=>{e.preventDefault();const title=$('#gT').value.trim(),grp=$('#gG').value.trim();
+  if(!title)return showErr('#gErr','Add a title.');if(!grp)return showErr('#gErr','Add a group.');
+  const ex=$('#gE').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const [a,...b]=l.split('|');return [a.trim(),b.join('|').trim()]});
+  const topic={id:gEdit?gEdit.id:slugId(title,'c-'),g:grp,i:$('#gI').value.trim()||'📘',t:title,f:$('#gF').value.trim(),u:$('#gU').value.trim(),ex,exLang:$('#gEL').value,free:$('#gFree').checked};
+  cloudGrammar=[...cloudGrammar.filter(x=>x.id!==topic.id),topic];
+  try{await cloudSet('content','grammar',{topics:cloudGrammar});rebuildGrammar();gFill(topic);toast(t('Published')+' ✅')}catch(x){adminFail()}});
+
+/* ---------- admin: tests ---------- */
+let tEdit=null,tDel=null;
+const TFNG=['TRUE','FALSE','NOT GIVEN'],YNNG=['YES','NO','NOT GIVEN'];
+function parseQs(text){const qs=[],errs=[];let q=null;
+  const push=()=>{if(!q)return;const A=(q.ans||'').trim(),AU=A.toUpperCase();if(!q.o.length){if(TFNG.includes(AU))q.o=[...TFNG];else if(YNNG.includes(AU))q.o=[...YNNG]}
+    let a=/^[A-H]$/.test(AU)&&q.o.length>1&&!q.o.some(o=>o.toUpperCase()===AU)?AU.charCodeAt(0)-65:q.o.findIndex(o=>o.toUpperCase()===AU);
+    const n=qs.length+1;if(q.o.length<2)errs.push(t('Question {0}: add at least 2 options',n));else if(a<0||a>=q.o.length)errs.push(t('Question {0}: the answer does not match an option',n));
+    qs.push({q:q.q.trim(),o:q.o,a:Math.max(0,a),e:(q.e||'').trim()});q=null};
+  text.replace(/\r/g,'').split('\n').forEach(raw=>{const l=raw.trim();if(!l)return;let m;
+    if((m=l.match(/^(?:Q|Câu)\s*\d*\s*[:.)]\s*(.*)$/i))||(m=l.match(/^\d+\s*[.)]\s+(.*)$/))){push();q={q:m[1],o:[],ans:'',e:''};return}
+    if(!q)return;
+    if((m=l.match(/^([A-H])\s*[).]\s*(.+)$/))&&!q.ans){q.o.push(m[2].trim());return}
+    if(m=l.match(/^(?:ANS|ANSWER|ĐÁP ÁN)\s*[:：]\s*(.*)$/i)){q.ans=m[1];return}
+    if(m=l.match(/^(?:EXP|EXPLANATION|GIẢI THÍCH)\s*[:：]\s*(.*)$/i)){q.e=m[1];return}
+    if(q.e)q.e+=' '+l;else if(!q.o.length&&!q.ans)q.q+=' '+l});
+  push();return{qs,errs}}
+const qsToText=qs=>qs.map(q=>{const tf=q.o.length===3&&(q.o.join()===TFNG.join()||q.o.join()===YNNG.join());
+  return `Q: ${q.q}\n${tf?'':q.o.map((o,k)=>`${String.fromCharCode(65+k)}) ${o}`).join('\n')+'\n'}ANS: ${tf?q.o[q.a]:String.fromCharCode(65+q.a)}${q.e?`\nEXP: ${q.e}`:''}`}).join('\n\n');
+function renderAdmTests(){const over=new Set(cloudTests.map(x=>x.id)),rows=[...cloudTests.filter(x=>!BASE_TESTS.some(b=>b.id===x.id)).slice().reverse(),...BASE_TESTS.map(b=>cloudTests.find(c=>c.id===b.id)||b)];
+  $('#tAdmList').innerHTML=rows.map(x=>{const isBase=BASE_TESTS.some(b=>b.id===x.id),edited=over.has(x.id),off=isBase?siteSet.hiddenTests.includes(x.id)||!!x.hidden:!!x.hidden;
+    const meta=[t('{0} questions',x.qs.length),x.audio?'🎧':'',x.passage?'📄':'',x.vip?'👑 VIP':'',off?t('Hidden'):'',isBase?(edited?t('Edited sample'):t('Built-in sample')):''].filter(Boolean).join(' · ');
+    const btns=tDel===x.id?`<button class="btn danger-solid" type="button" data-act="del2">${esc(t(isBase?'Undo my edits':'Delete'))}</button><button class="btn ghost" type="button" data-act="nodel">${esc(t('Keep'))}</button>`:
+      `<button class="btn icon ghost" type="button" data-act="edit" aria-label="${esc(t('Edit'))}">✏️</button><button class="btn icon ghost" type="button" data-act="view" aria-label="${esc(t('Preview'))}">▶</button><button class="btn icon ghost" type="button" data-act="toggle" aria-label="${esc(off?t('Show to learners'):t('Hide from learners'))}">${off?'👁':'🙈'}</button>${edited||!isBase?`<button class="btn icon ghost" type="button" data-act="del" aria-label="${esc(t('Delete'))}">🗑</button>`:''}`;
+    return `<div class="admitem${off?' off':''}${tEdit&&tEdit.id===x.id?' editing':''}" data-id="${esc(x.id)}"><span class="admemo">${esc(x.icon||'📝')}</span><div style="min-width:0"><b data-noi18n>${esc(x.title)}</b><div class="muted small">${esc(meta)}</div></div><div class="row" style="flex-wrap:nowrap">${btns}</div></div>`}).join('');onQsInput()}
+function onQsInput(){const r=parseQs($('#tQ').value);$('#tQInfo').innerHTML=r.qs.length?esc(t('{0} questions ready',r.qs.length))+(r.errs.length?'<br>'+r.errs.map(x=>`<span style="color:var(--bad)">${esc(x)}</span>`).join('<br>'):' ✓'):''}
+$('#tQ').addEventListener('input',()=>{clearTimeout(window._qT);window._qT=setTimeout(onQsInput,250)});
+function tFill(x){tEdit=x||null;$('#tFormTitle').textContent=t(x?'Edit test':'New test');$('#tSave').textContent=t(x?'Save changes':'Publish');
+  $('#tT').value=x?x.title:'';$('#tI').value=x?x.icon||'':'';$('#tM').value=x&&x.time?Math.round(x.time/60):'';$('#tD').value=x?x.desc||'':'';$('#tV').checked=!!(x&&x.vip);$('#tH').checked=!!(x&&x.hidden);
+  $('#tA').value=x?x.audio||'':'';$('#tP').value=x?x.passage||'':'';$('#tQ').value=x?qsToText(x.qs):'';showErr('#tErr','');renderAdmTests()}
+$('#tTpl').onclick=()=>{$('#tQ').value=($('#tQ').value.trim()?$('#tQ').value.trim()+'\n\n':'')+'Q: The report ___ to the manager yesterday.\nA) send\nB) sent\nC) was sent\nD) sending\nANS: C\nEXP: Passive voice in the past simple: was + past participle.\n\nQ: Rooftop hives are only found on office buildings.\nANS: FALSE\nEXP: The passage also mentions hotels and schools.';onQsInput()};
+$('#tNew').onclick=()=>{tFill(null);$('#tT').focus()};$('#tCancel').onclick=()=>tFill(null);
+$('#tAdmList').onclick=async e=>{const b=e.target.closest('[data-act]');if(!b)return;const id=b.closest('[data-id]').dataset.id,a=b.dataset.act,isBase=BASE_TESTS.some(x=>x.id===id);
+  const x=cloudTests.find(c=>c.id===id)||BASE_TESTS.find(c=>c.id===id);
+  try{if(a==='edit'){tFill(x);$('#tForm').scrollIntoView({behavior:'smooth',block:'start'})}
+    if(a==='view'){go('tests');startTest(id)}
+    if(a==='toggle'){if(isBase&&!cloudTests.some(c=>c.id===id)){const H=siteSet.hiddenTests;siteSet.hiddenTests=H.includes(id)?H.filter(y=>y!==id):[...H,id];await saveSite('hiddenTests')}else{x.hidden=!x.hidden;await cloudSet('tests',id,x)}rebuildTests();renderAdmTests()}
+    if(a==='del'){tDel=id;renderAdmTests()}if(a==='nodel'){tDel=null;renderAdmTests()}
+    if(a==='del2'){tDel=null;await cloudDel('tests',id);cloudTests=cloudTests.filter(c=>c.id!==id);if(tEdit&&tEdit.id===id)tFill(null);rebuildTests();renderAdmTests();toast(t('Deleted'))}
+  }catch(y){adminFail()}};
+$('#tForm').addEventListener('submit',async e=>{e.preventDefault();const title=$('#tT').value.trim();if(!title)return showErr('#tErr','Add a title.');
+  const r=parseQs($('#tQ').value);if(!r.qs.length)return showErr('#tErr','Add at least one question.');if(r.errs.length)return showErr('#tErr',r.errs[0]);
+  const mins=parseFloat($('#tM').value)||r.qs.length;
+  const x={id:tEdit?tEdit.id:slugId(title,'t-'),title,icon:$('#tI').value.trim()||'📝',desc:$('#tD').value.trim(),time:Math.round(mins*60),vip:$('#tV').checked,hidden:$('#tH').checked,
+    audio:$('#tA').value.trim(),passage:$('#tP').value.trim(),qs:r.qs,createdAt:tEdit&&tEdit.createdAt?tEdit.createdAt:Date.now(),updatedAt:Date.now()};
+  try{await cloudSet('tests',x.id,x);cloudTests=[...cloudTests.filter(c=>c.id!==x.id),x];rebuildTests();tFill(x);toast(t(x.hidden?'Draft saved':'Published')+' ✅')}catch(y){adminFail()}});
+gFill(null);tFill(null);
 
 /* ---------- init ---------- */
 function refreshAll(){renderPlan();renderAccount();renderEpisodes();renderCueList();renderCurrent();renderGram();renderVocab();renderTests();renderNotes();renderStats();if(isVip())ensureTr([cur,cur+1])}
